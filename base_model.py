@@ -210,7 +210,12 @@ for index, coord in enumerate(linearMesh.data):
     
 
 
-# In[15]:
+# In[24]:
+
+
+
+
+# In[27]:
 
 dres = 40
 dummyelementMesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"), 
@@ -228,7 +233,8 @@ for index, coord in enumerate(linearMesh.data):
         temperatureField.data[index] = 0.
     else:
         #print(dummytemperatureField.evaluate((xpos, ypos)))
-        temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos))
+        randpert = np.random.rand(1)[0]*(50./2500)
+        temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos)) + randpert
 
 
 # In[15]:
@@ -1068,16 +1074,16 @@ checkpoint(step, checkpointPath)
 #fig1.show()
 
 
-# In[17]:
+# In[28]:
 
-#fig1 = plt.Figure()
+fig1 = plt.Figure()
 #fig1.Surface(buoyancyFn[1], elementMesh)
-#fig1.Surface(temperatureField, elementMesh, colours='blue white brown')
+fig1.Surface(temperatureField, elementMesh, colours='blue white brown')
 #fig1.Points( swarm=gSwarm, colourVariable=materialVariable , pointSize=0.5, colours='white red black')
 #fig1.Points( swarm=gSwarm, colourVariable=rockIntVar, pointSize=1.0)
 #fig1.Mesh(linearMesh)
 #fig1.VectorArrows(velocityField, linearMesh, lengthScale=0.002)
-#fig1.show()
+fig1.show()
 
 
 # In[ ]:
