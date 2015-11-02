@@ -383,7 +383,7 @@ DG[1][0]['depthcondition'] = (660./D) #This means we're going to kill lithospher
 #Anything to lithsphere
 DG.add_edges_from([(0,1),(3,1)])
 DG[0][1]['depthcondition'] = 200./D
-#DG[0][1]['avgtempcondition'] = 0.75*avgtemp #definition of thermal lithosphere
+DG[0][1]['avgtempcondition'] = 0.75*avgtemp #definition of thermal lithosphere
 
 
 #Anything to crust
