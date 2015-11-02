@@ -1,3 +1,5 @@
+#!/bin/bash --login
+
 # SLURM directives
 #
 # Here we specify to SLURM we want one node (--nodes=1) with
