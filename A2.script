@@ -35,4 +35,4 @@ module load numpy/1.9.2
 
 module load mpi4py
 
-aprun -n 64 -N 32 python ./A2.py
+aprun -n 64 -N 32 python ./A2.py 256
