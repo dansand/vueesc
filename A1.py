@@ -777,7 +777,7 @@ solver.solve(nonLinearIterate=True)
 #Create advdiff system
 advDiff = uw.systems.AdvectionDiffusion( temperatureField, velocityField, diffusivity=1., conditions=[tempBC,] )
 
-advector = uw.systems.SwarmAdvector( swarm=gSwarm, velocityField=velocityField, order=2)
+advector = uw.systems.SwarmAdvector( swarm=gSwarm, velocityField=velocityField, order=1)
 
 
 # Metrics for benchmark
