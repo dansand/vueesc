@@ -9,7 +9,7 @@
 # following --account (e.g., --account=project123).
 
 #SBATCH --nodes=2
-#SBATCH --time=01:00:00
+#SBATCH --time=00:06:00
 #SBATCH --account=m18
 
 # Launch the job.
@@ -21,26 +21,18 @@
 # Launch the script on the back end with aprun -n 1
 
 
-module load PrgEnv-cray
-module swap PrgEnv-cray PrgEnv-gnu
+#module load PrgEnv-cray
+#module swap PrgEnv-cray PrgEnv-gnu
 module load cray-hdf5
 module load cray-mpich/7.0.0
 export MPI_DIR=$CRAY_MPICH2_DIR
 export PETSC_DIR=/group/m18/dsandiford/petsc-3.6.1
 module load cray-hdf5
 module load numpy/1.9.2
-module load python/2.7.6
+#module load python/2.7.6
 
 
 
 module load mpi4py
 
-aprun -n 48 python ../base_model.py
-
-#
-# If you have an executable python script with a "bang path",
-# make sure the path is of the form
-#
-#   #!/usr/bin/env python
-
-#aprun -n 1 ./serial-python-x.py
+aprun -n 32 -N 16 python ./base_model.py

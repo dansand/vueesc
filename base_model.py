@@ -35,7 +35,7 @@ import underworld as uw
 import math
 from underworld import function as fn
 import glucifer.pylab as plt
-import matplotlib.pyplot as pyplot
+#import matplotlib.pyplot as pyplot
 import time
 import numpy as np
 import os
@@ -51,8 +51,8 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "T"
-ModNum = 0
+Model = "A"
+ModNum = 4
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -302,7 +302,7 @@ materialVariable.data[:] = mantleIndex
 
 # #Material Graphs
 
-# In[19]:
+# In[30]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -400,13 +400,34 @@ CrustM
 
 # In[23]:
 
+DG.nodes()
+
+
+# In[28]:
+
 remove_nodes = []
-for node in DG.nodes_iter():
+for node in DG.nodes():
     if not node in material_list:
         remove_nodes.append(node)
         
 for rmnode in remove_nodes:
     DG.remove_node(rmnode)
+
+
+# In[29]:
+
+DG.nodes()
+
+
+# In[60]:
+
+#remove_nodes = []
+#for node in DG.nodes_iter():
+#    if not node in material_list:
+#        remove_nodes.append(node)
+        
+#for rmnode in remove_nodes:
+#    DG.remove_node(rmnode)
 
 
 # In[24]:
@@ -639,10 +660,10 @@ a = 1.25*10**-5
 kappa = 10**-6
 dT = 2500
 eta0 = rho*g*a*dT*((D*1e3)**3)/(RA*kappa)
-print("assumed reference viscosity is: "+ str(eta0))
+#print("assumed reference viscosity is: "+ str(eta0))
 #Composisitional Rayleigh number
 Rc = (3300*g*(D*1000)**3)/(eta0*kappa)
-print "compositional Rayleigh number is about: " + "%0.4g" % Rc
+#print "compositional Rayleigh number is about: " + "%0.4g" % Rc
 
 
 # In[36]:
@@ -655,7 +676,7 @@ airdensity = RA*CompRAfact
 
 # In[37]:
 
-print(ETA_T, ETA_Y, ETA0, YSTRESS)
+#print(ETA_T, ETA_Y, ETA0, YSTRESS)
 
 
 # Set up simulation parameters and functions
@@ -994,7 +1015,7 @@ while realtime < 0.15:
                 materialVariable.data[particleID] = check
             else:
                 pass
-        print("Total Particles updated is: " + str(number_updated))
+        #print("Total Particles updated is: " + str(number_updated))
         #Also update those integration swarms
         rockIntVar.data[:] = 0.
         notair = np.where(materialVariable.data != airIndex)
@@ -1006,7 +1027,7 @@ while realtime < 0.15:
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
         #Also print some info at this step increment
-        print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
+        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
           .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
         
 f_o.close()
