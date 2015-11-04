@@ -278,7 +278,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
-layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=50 )
+layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20 )
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
