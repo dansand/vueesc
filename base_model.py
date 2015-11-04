@@ -22,14 +22,14 @@
 # 
 # 
 
-# In[1]:
+# In[19]:
 
 #pwd
 
 
 # Load python functions needed for underworld. Some additional python functions from os, math and numpy used later on.
 
-# In[2]:
+# In[20]:
 
 import underworld as uw
 import math
@@ -46,13 +46,13 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 
-# In[3]:
+# In[21]:
 
 ############
 #Need to manually set these two
 ############
-Model = "B"
-ModNum = 0
+Model = "T"
+ModNum = 1
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -69,13 +69,13 @@ else:
 
 # Set physical constants and parameters, including the Rayleigh number (*RA*). 
 
-# In[4]:
+# In[22]:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
 
 
-# In[5]:
+# In[23]:
 
 ETA_T = 1e5
 newvisc= math.exp(math.log(ETA_T)*0.53)
@@ -86,7 +86,7 @@ newvisc= math.exp(math.log(ETA_T)*0.53)
 
 
 
-# In[6]:
+# In[24]:
 
 ###########
 #Constants
@@ -103,7 +103,7 @@ D = 2890.
 MAXY = 1.2
 
 
-# In[7]:
+# In[25]:
 
 ##########
 #variables, these can be defined with STDIN,
@@ -112,7 +112,7 @@ MAXY = 1.2
     
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 128
+DEFAULT = 256
     
 if len(sys.argv) == 1:
     RES = DEFAULT
@@ -123,7 +123,7 @@ else:
     
 
 
-# In[8]:
+# In[26]:
 
 outputPath = str(Model) + "/" + str(ModNum) + "/"
 imagePath = outputPath + 'images/'
@@ -146,7 +146,7 @@ if uw.rank()==0:
         os.makedirs(filePath)
 
 
-# In[9]:
+# In[27]:
 
 dim = 2          # number of spatial dimensions
 
@@ -154,7 +154,7 @@ Xres, Yres = 2*RES, RES
 dim = 2          # number of spatial dimensions
 
 
-# In[10]:
+# In[28]:
 
 yelsize = MAXY/Yres
 yelsize*D
@@ -166,7 +166,7 @@ yelsize*D
 
 # Create mesh objects. These store the indices and spatial coordiates of the grid points on the mesh.
 
-# In[11]:
+# In[29]:
 
 elementMesh = uw.mesh.FeMesh_Cartesian( elementType=("Q1/dQ0"), 
                                          elementRes=(Xres, Yres), 
@@ -178,7 +178,7 @@ constantMesh = elementMesh.subMesh
 
 # Create Finite Element (FE) variables for the velocity, pressure and temperature fields. The last two of these are scalar fields needing only one value at each mesh point, while the velocity field contains a vector of *dim* dimensions at each mesh point.
 
-# In[12]:
+# In[30]:
 
 velocityField    = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=dim )
 pressureField    = uw.fevariable.FeVariable( feMesh=constantMesh, nodeDofCount=1 )
@@ -189,7 +189,7 @@ temperatureField = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=1
 
 # #ICs and BCs
 
-# In[13]:
+# In[31]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
@@ -205,39 +205,51 @@ for index, coord in enumerate(linearMesh.data):
     tempNump[index] = pertCoeff;
     if coord[1] > 1:
         tempNump[index] = 0.
+
+
     
 
-    
+
+# In[32]:
+
+if RES == 256:
+    temperatureField.load('checkpoints/B0_init_temp.hdf5')
 
 
-# In[24]:
+# dres = 40
+# dummyelementMesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"), 
+#                                          elementRes = (dres, dres), 
+#                                            minCoord = (0., 0.), 
+#                                            maxCoord = (1., 1.))
+# 
+# dummytemperatureMesh = dummyelementMesh 
+# dummytemperatureField = uw.fevariable.FeVariable( feMesh=dummytemperatureMesh, nodeDofCount=1 )
+# dummytemperatureField.load('checkpoints/temperatureField_4_3900.hdf5')
+# 
+# for index, coord in enumerate(linearMesh.data):
+#     xpos, ypos = (1.- abs(coord[0])), coord[1]
+#     if ypos >= 1:
+#         temperatureField.data[index] = 0.
+#     else:
+#         #print(dummytemperatureField.evaluate((xpos, ypos)))
+#         randpert = np.random.rand(1)[0]*(50./2500)
+#         #Don't know mesh partitions in advance, and possible diferent between 'real' and 'dummy' mesh
+#         try:
+#             temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos))  + randpert
+#         except:
+#             pass
+
+# In[33]:
+
+#temperatureField.save('checkpoints/B0_init_temp.hdf5')
+
+
+# In[37]:
 
 
 
 
-# In[27]:
-
-dres = 40
-dummyelementMesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"), 
-                                         elementRes = (dres, dres), 
-                                           minCoord = (0., 0.), 
-                                           maxCoord = (1., 1.))
-
-dummytemperatureMesh = dummyelementMesh 
-dummytemperatureField = uw.fevariable.FeVariable( feMesh=dummytemperatureMesh, nodeDofCount=1 )
-dummytemperatureField.load('checkpoints/temperatureField_4_3900.hdf5')
-
-for index, coord in enumerate(linearMesh.data):
-    xpos, ypos = (1.- abs(coord[0])), coord[1]
-    if ypos >= 1:
-        temperatureField.data[index] = 0.
-    else:
-        #print(dummytemperatureField.evaluate((xpos, ypos)))
-        randpert = np.random.rand(1)[0]*(50./2500)
-        temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos)) + randpert
-
-
-# In[15]:
+# In[1]:
 
 # Get the actual sets 
 #
@@ -254,6 +266,11 @@ IWalls = linearMesh.specialSets["MinI_VertexSet"] + linearMesh.specialSets["MaxI
 JWalls = linearMesh.specialSets["MinJ_VertexSet"] + linearMesh.specialSets["MaxJ_VertexSet"]
 TWalls = linearMesh.specialSets["MaxJ_VertexSet"]
 BWalls = linearMesh.specialSets["MinJ_VertexSet"]
+
+
+# In[ ]:
+
+
 
 
 # In[16]:
@@ -927,16 +944,16 @@ figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
 # The main time stepping loop begins here. Before this the time and timestep are initialised to zero and the output statistics arrays are set up. Also the frequency of outputting basic statistics to the screen is set in steps_output.
 # 
 
-# In[52]:
+# In[1]:
 
 realtime = 0.
 step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = np.floor(10.*RES/64)
-files_output = 200
-gldbs_output = 500
+swarm_update = min(20, np.floor(10.*RES/64))
+files_output = 400
+gldbs_output = 1000
 checkpoint_every = 10000
 
 
@@ -959,7 +976,7 @@ start = time.clock()
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 while realtime < 1.15:
-#while step < 3:
+#while step < 1:
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
@@ -1019,6 +1036,9 @@ while realtime < 1.15:
         rmsField.save(fullpath)
      
     if (step % gldbs_output == 0) & (writeFiles == True):
+        #Rebuild any necessary swarm variables
+        viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+        #Write gldbs
         fnamedb = "viscFig" + "_" + str(ModIt) + "_" + str(step) + ".gldb"
         fullpath = os.path.join(outputPath + "gldbs/" + fnamedb)
         figEta.save_database(fullpath)
@@ -1052,7 +1072,7 @@ while realtime < 1.15:
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
         #Also print some info at this step increment
-        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
+        print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
           .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
         
 f_o.close()
@@ -1074,16 +1094,16 @@ checkpoint(step, checkpointPath)
 #fig1.show()
 
 
-# In[28]:
+# In[34]:
 
-fig1 = plt.Figure()
+#fig1 = plt.Figure()
 #fig1.Surface(buoyancyFn[1], elementMesh)
-fig1.Surface(temperatureField, elementMesh, colours='blue white brown')
+#fig1.Surface(temperatureField, elementMesh, colours='blue white brown')
 #fig1.Points( swarm=gSwarm, colourVariable=materialVariable , pointSize=0.5, colours='white red black')
 #fig1.Points( swarm=gSwarm, colourVariable=rockIntVar, pointSize=1.0)
 #fig1.Mesh(linearMesh)
 #fig1.VectorArrows(velocityField, linearMesh, lengthScale=0.002)
-fig1.show()
+#fig1.show()
 
 
 # In[ ]:

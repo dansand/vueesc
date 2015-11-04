@@ -994,6 +994,9 @@ while realtime < 0.15:
         rmsField.save(fullpath)
 
     if (step % gldbs_output == 0) & (writeFiles == True):
+        #Rebuild any necessary swarm variables
+        viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+        #Write gldbs
         fnamedb = "viscFig" + "_" + str(ModIt) + "_" + str(step) + ".gldb"
         fullpath = os.path.join(outputPath + "gldbs/" + fnamedb)
         figEta.save_database(fullpath)
@@ -1027,7 +1030,7 @@ while realtime < 0.15:
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
         #Also print some info at this step increment
-        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
+        print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
           .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
 
 f_o.close()
