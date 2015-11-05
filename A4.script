@@ -21,8 +21,8 @@
 # Launch the script on the back end with aprun -n 1
 
 
-#module load PrgEnv-cray
-#module swap PrgEnv-cray PrgEnv-gnu
+module load PrgEnv-cray
+module swap PrgEnv-cray PrgEnv-gnu
 module load cray-hdf5
 module load cray-mpich/7.0.0
 export MPI_DIR=$CRAY_MPICH2_DIR
