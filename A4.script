@@ -28,8 +28,8 @@ module load cray-mpich/7.0.0
 export MPI_DIR=$CRAY_MPICH2_DIR
 export PETSC_DIR=/group/m18/dsandiford/petsc-3.6.1
 module load cray-hdf5
+module load python/2.7.6
 module load numpy/1.9.2
-#module load python/2.7.6
 
 
 
