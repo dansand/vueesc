@@ -51,8 +51,8 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "T"
-ModNum = 0
+Model = "A"
+ModNum = 4
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -100,7 +100,7 @@ ETA0 = 1e-3*newvisc
 RES = 40
 YSTRESS = 1.*newvisc
 D = 2890.
-MAXY = 1.2
+MAXY = 1.
 
 
 # In[7]:
@@ -244,7 +244,7 @@ BWalls = linearMesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions.
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField,
-                                              nodeIndexSets=(IWalls,JWalls) )
+                                              nodeIndexSets=(IWalls + TWalls,JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
@@ -383,7 +383,7 @@ DG[1][0]['depthcondition'] = (660./D) #This means we're going to kill lithospher
 #Anything to lithsphere
 DG.add_edges_from([(0,1),(3,1)])
 DG[0][1]['depthcondition'] = 200./D
-#DG[0][1]['avgtempcondition'] = 0.75*avgtemp #definition of thermal lithosphere
+DG[0][1]['avgtempcondition'] = 0.75*avgtemp #definition of thermal lithosphere
 
 
 #Anything to crust
@@ -933,8 +933,8 @@ start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-while realtime < 0.15:
-#while step < 3:
+#while realtime < 0.15:
+while step < 10:
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
@@ -994,6 +994,9 @@ while realtime < 0.15:
         rmsField.save(fullpath)
 
     if (step % gldbs_output == 0) & (writeFiles == True):
+        #Rebuild any necessary swarm variables
+        viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+        #Write gldbs
         fnamedb = "viscFig" + "_" + str(ModIt) + "_" + str(step) + ".gldb"
         fullpath = os.path.join(outputPath + "gldbs/" + fnamedb)
         figEta.save_database(fullpath)
@@ -1027,7 +1030,7 @@ while realtime < 0.15:
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
         #Also print some info at this step increment
-        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
+        print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
           .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
 
 f_o.close()
