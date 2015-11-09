@@ -64,7 +64,7 @@ yelsize*D
 
 # Set output file and directory for results
 
-# In[7]:
+# In[6]:
 
 if uw.rank()==0:
     print("############################" + "\n" + "Front matter Done" + "\n" + "############################")
@@ -72,7 +72,7 @@ if uw.rank()==0:
 
 # Create mesh objects. These store the indices and spatial coordiates of the grid points on the mesh.
 
-# In[ ]:
+# In[7]:
 
 elementMesh = uw.mesh.FeMesh_Cartesian( elementType=("Q1/dQ0"), 
                                          elementRes=(Xres, Yres), 
@@ -82,20 +82,20 @@ linearMesh   = elementMesh
 constantMesh = elementMesh.subMesh 
 
 
-# In[ ]:
+# In[8]:
 
 if uw.rank()==0:
     print("############################" + "\n" + "Mesh initialised" + "\n" + "############################")
 
 
-# In[ ]:
+# In[9]:
 
 velocityField    = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=dim )
 pressureField    = uw.fevariable.FeVariable( feMesh=constantMesh, nodeDofCount=1 )
 temperatureField = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=1 )
 
 
-# In[ ]:
+# In[10]:
 
 if uw.rank()==0:
     print("############################" + "\n" + "FeVariable initialised" + "\n" + "############################")
@@ -103,7 +103,7 @@ if uw.rank()==0:
 
 # #ICs and BCs
 
-# In[ ]:
+# In[11]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
@@ -124,7 +124,7 @@ for index, coord in enumerate(linearMesh.data):
     
 
 
-# In[ ]:
+# In[12]:
 
 # Get the actual sets 
 #
@@ -148,7 +148,7 @@ BWalls = linearMesh.specialSets["MinJ_VertexSet"]
 
 
 
-# In[ ]:
+# In[13]:
 
 # Now setup the dirichlet boundary condition
 # Note that through this object, we are flagging to the system 
@@ -162,7 +162,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
                                               nodeIndexSets=(JWalls,) )
 
 
-# In[ ]:
+# In[14]:
 
 # Set temp boundaries 
 # on the boundaries
@@ -172,7 +172,7 @@ for index in linearMesh.specialSets["MaxJ_VertexSet"]:
     temperatureField.data[index] = TS
 
 
-# In[ ]:
+# In[15]:
 
 if uw.rank()==0:
     print("############################" + "\n" + "ICs and Bcs Done" + "\n" + "############################")
@@ -180,7 +180,7 @@ if uw.rank()==0:
 
 # #Particles
 
-# In[ ]:
+# In[16]:
 
 # We create swarms of particles which can advect, and which may determine 'materials'
 gSwarm = uw.swarm.Swarm( feMesh=elementMesh )
@@ -209,7 +209,7 @@ airIndex = 3
 materialVariable.data[:] = mantleIndex
 
 
-# In[ ]:
+# In[17]:
 
 if uw.rank()==0:
     print("############################" + "\n" + "Particles set up" + "\n" + "############################")
@@ -217,7 +217,7 @@ if uw.rank()==0:
 
 # #Material Graphs
 
-# In[ ]:
+# In[18]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -225,7 +225,7 @@ if uw.rank()==0:
 material_list = [0,1,2,3]
 
 
-# In[ ]:
+# In[19]:
 
 #All depth conditions are given as (km/D) where D is the length scale, 
 #note that 'model depths' are used, e.g. 1-z, where z is the vertical Underworld coordinate
@@ -256,10 +256,180 @@ dz = 50./D
 avgtemp = 0.5
 
 
+# In[20]:
+
+import networkx as nx
+
+#######Graph object
+DG = nx.DiGraph(field="Depth")
+
+#######Nodes
+#Note that the order of materials, deepest to shallowest is important 
+DG.add_node(0, mat='mantle')
+DG.add_node(1, mat='lithosphere')
+DG.add_node(2, mat='crust')
+DG.add_node(3, mat='air')
+
+
+labels=dict((n,d['mat']) for n,d in DG.nodes(data=True))
+pos=nx.spring_layout(DG) 
+
+
+#######Edges
+#anything to air
+DG.add_edges_from([(0,3),(1,3), (2,3)])
+DG[0][3]['depthcondition'] = -1*dz
+DG[1][3]['depthcondition'] = -1*dz
+DG[2][3]['depthcondition'] = -1*dz
+
+
+#Anything to mantle
+DG.add_edges_from([(2,0), (3,0), (1,0)])
+DG[3][0]['depthcondition'] = dz
+DG[2][0]['depthcondition'] = (300./D)
+DG[1][0]['depthcondition'] = (660./D) #This means we're going to kill lithosphere at the 660.
+
+
+#Anything to lithsphere
+DG.add_edges_from([(0,1),(3,1)])
+DG[0][1]['depthcondition'] = 200./D
+DG[0][1]['avgtempcondition'] = 0.75*avgtemp #definition of thermal lithosphere
+
+
+#Anything to crust
+DG.add_edges_from([(0,2), (1,2)])
+DG[0][2]['depthcondition'] = CrustM
+DG[1][2]['depthcondition'] = CrustM
+
+
+# In[21]:
+
+DG.nodes()
+
+
+# In[22]:
+
+remove_nodes = []
+for node in DG.nodes():
+    if not node in material_list:
+        remove_nodes.append(node)
+        
+for rmnode in remove_nodes:
+    DG.remove_node(rmnode)
+
+
+# In[23]:
+
+DG.nodes()
+
+
+# In[24]:
+
+#A Dictionary to map strings in the graph (e.g. 'depthcondition') to particle data arrays
+
+particledepths = 1. - gSwarm.particleCoordinates.data[:,1]
+particletemps = temperatureField.evaluate(gSwarm)[:,0]
+
+conditionmap = {}
+
+conditionmap['depthcondition'] = {}
+conditionmap['depthcondition']['data'] = particledepths
+conditionmap['avgtempcondition'] = {}
+conditionmap['avgtempcondition']['data'] = particletemps
+
+
+# In[25]:
+
+def update_swarm(graph, particleIndex):
+    """
+    This function takes the materials graph (networkx.DiGraph), and a particle index,
+    then determines if a material update is required 
+    and if so, returns the new materialindex
+    Args:
+        graph (networkx.DiGraph): Directed multigraph representing the transformation of material types
+        particleIndex (int): the particle index as corressponding to the index in the swarm data arrays
+    Returns:
+        if update is required the function returns the the new material variable (int) 
+        else returns None
+    Raises:
+        TypeError: not implemented
+        ValueError: not implemented
+    """
+    ##Egde gives links to other materials, we then query the conditions to see if we should change materials
+    matId = materialVariable.data[particleIndex][0]
+    innerchange = False
+    outerchange = False
+    for edge in graph[matId]:
+        if outerchange:
+            break
+        for cond in graph[matId][edge].keys():
+            outerchange = False
+            if innerchange: #found a complete transition, break inner loop
+                break
+            currentparticlevalue = conditionmap[cond]['data'][particleIndex]
+            crossover = graph[matId][edge][cond]
+            if ((matId > edge) and (currentparticlevalue > crossover)):
+                innerchange = False # continue on, 
+                if graph[matId][edge].keys()[-1] == cond:
+                    outerchange = True
+                    innerchange = edge
+                    break
+            elif ((matId < edge) and (currentparticlevalue < crossover)):
+                innerchange = False
+                if graph[matId][edge].keys()[-1] == cond:
+                    outerchange = True
+                    innerchange = edge
+                    break
+            else:
+                #condition not met, break outer loop, go to next edge, outerchange should still be False
+                break
+    if type(innerchange) == int:
+        return innerchange
+
+
+# for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
+#                 check = update_swarm(DG, particleID)
+#                 #print check
+#                 if check > -1:
+#                     #number_updated += 1
+#                     materialVariable.data[particleID] = check
+
+# In[26]:
+
+#Cleanse the swarm of its sins
+#For some Material Graphs, the graph may have to be treaversed more than once
+
+check = -1
+number_updated = 1
+
+while number_updated != 0:
+    number_updated = 0
+    for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
+                check = update_swarm(DG, particleID)
+                if check > -1:
+                    number_updated += 1
+                    materialVariable.data[particleID] = check
+
+
 # In[ ]:
 
+print("before comm.Barrier()")
+
+
+# In[28]:
+
+comm.Barrier()
+
+
+# In[ ]:
+
+print("After comm.Barrier()")
+
+
+# In[29]:
+
 if uw.rank()==0:
-    print("############################" + "\n" + "Material graphs skipped" + "\n" + "############################")
+    print("############################" + "\n" + "Material graphs done" + "\n" + "############################")
 
 
 # #Material properties
