@@ -51,7 +51,7 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "A"
+Model = "R"
 ModNum = 4
 
 if len(sys.argv) == 1:
