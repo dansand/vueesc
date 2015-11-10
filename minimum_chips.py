@@ -692,6 +692,8 @@ while realtime < 0.15:
                 materialVariable.data[particleID] = check
             else:
                 pass
+        if uw.rank()==0:
+            print("############################" + "\n" + "updating swarm, number updated: " + str(number_updated) + "\n" + "############################")
 
     
         
