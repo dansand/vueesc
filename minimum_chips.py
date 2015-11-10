@@ -692,19 +692,7 @@ while realtime < 0.15:
                 materialVariable.data[particleID] = check
             else:
                 pass
-        #Also update those integration swarms
-        rockIntVar.data[:] = 0.
-        notair = np.where(materialVariable.data != airIndex)
-        rockIntVar.data[notair] = 1.
-        airIntVar.data[:] = 0.
-        notrock = np.where(materialVariable.data == airIndex)
-        airIntVar.data[notrock] = 1.
-        lithIntVar.data[:] = 0.
-        islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
-        lithIntVar.data[islith] = 1.
-        #Also print some info at this step increment
-        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
-        #  .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
+
     
         
 
