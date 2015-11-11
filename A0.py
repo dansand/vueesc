@@ -72,7 +72,7 @@ else:
 # In[4]:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
-writeFiles = True
+writeFiles = False
 
 
 # In[5]:
