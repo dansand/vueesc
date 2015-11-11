@@ -913,8 +913,8 @@ swarm_update = np.floor(10.*RES/64)
 files_output = 200
 gldbs_output = 500
 checkpoint_every = 10000
-metric_output = np.floor(10.*RES/64)
-
+#metric_output = np.floor(10.*RES/64)
+metric_output = 1
 
 # In[49]:
 
@@ -976,9 +976,9 @@ while realtime < 0.15:
         dTp = Rmsurfloc.dtype
         Rmsurfglob = np.array(0, dtype=dTp)
         #Do global sum
-        comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
-        comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
-        comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
+        #comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
+        #comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
+        #comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
         # output to summary text file
         if uw.rank()==0:
             f_o.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
