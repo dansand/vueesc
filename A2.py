@@ -73,6 +73,8 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
+loadTemp = True
+refine_mesh = False
 
 
 # In[5]:
@@ -101,6 +103,7 @@ RES = 40
 YSTRESS = 1.*newvisc
 D = 2890.
 MAXY = 1.0
+ALPHA = 11.
 
 
 # In[7]:
@@ -205,6 +208,22 @@ for index, coord in enumerate(linearMesh.data):
     tempNump[index] = pertCoeff;
     if coord[1] > 1:
         tempNump[index] = 0.
+
+if refine_mesh:
+    alpha=ALPHA
+    newys = []
+    newxs = []
+    for index, coord in enumerate(linearMesh.data):
+        y0 = coord[1]
+        x0 = abs(coord[0])
+        newy = (math.log(alpha*y0 + math.e) - 1)*(1/(math.log(alpha + math.e) - 1))
+        newx = (math.log(alpha*x0 + math.e) - 1)*(1/(math.log(alpha + math.e) - 1))
+        newys.append(newy)
+        newxs.append(newx)
+
+    with linearMesh.deform_mesh():
+        linearMesh.data[:,1] = newys
+        linearMesh.data[:,0] = newxs
 
 
 
@@ -922,6 +941,7 @@ swarm_update = np.floor(10.*RES/64)
 files_output = 200
 gldbs_output = 500
 checkpoint_every = 10000
+metric_output = np.floor(10.*RES/64)
 
 
 # In[54]:
@@ -962,34 +982,35 @@ while realtime < 0.15:
         if coord[1] >= (1 + 1.5*(yelsize)):
             temperatureField.data[index] = 0.
     # Calculate the Metrics, only on 1 of the processors:
-    tempVariable.data[:] = temperatureField.evaluate(gSwarm)[:]
-    Avg_temp = avg_temp()
-    Rms = rms()
-    Max_vx_surf = max_vx_surf(velocityField, surfintswarm)
-    Gravwork = gravwork(dwint)
-    Viscdis = viscdis(vdint)
-    Viscdisair = viscdis(vdintair)
-    Viscdislith = viscdis(vdintlith)
-    etamax, etamin = visc_extr(viscosityFn2)
-    #These are the ones that need mpi4py treatment
-    Nu0loc = nusselt(temperatureField, baseintswarm, dx)
-    Nu1loc = nusselt(temperatureField, surfintswarm, dx)
-    Rmsurfloc = rms_surf(surfintswarm, dx)
-    #Setup the global output arrays
-    dTp = Nu0loc.dtype
-    Nu0glob = np.array(0, dtype=dTp)
-    dTp = Nu1loc.dtype
-    Nu1glob = np.array(0, dtype=dTp)
-    dTp = Rmsurfloc.dtype
-    Rmsurfglob = np.array(0, dtype=dTp)
-    #Do global sum
-    comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
-    comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
-    comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
-    # output to summary text file
-    if uw.rank()==0:
-        f_o.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
-                                          Rms,Rmsurfglob,Max_vx_surf,Gravwork, etamax, etamin, Viscdisair, Viscdislith))
+    if (step % metric_output == 0):
+        tempVariable.data[:] = temperatureField.evaluate(gSwarm)[:]
+        Avg_temp = avg_temp()
+        Rms = rms()
+        Max_vx_surf = max_vx_surf(velocityField, surfintswarm)
+        Gravwork = gravwork(dwint)
+        Viscdis = viscdis(vdint)
+        Viscdisair = viscdis(vdintair)
+        Viscdislith = viscdis(vdintlith)
+        etamax, etamin = visc_extr(viscosityFn2)
+        #These are the ones that need mpi4py treatment
+        Nu0loc = nusselt(temperatureField, baseintswarm, dx)
+        Nu1loc = nusselt(temperatureField, surfintswarm, dx)
+        Rmsurfloc = rms_surf(surfintswarm, dx)
+        #Setup the global output arrays
+        dTp = Nu0loc.dtype
+        Nu0glob = np.array(0, dtype=dTp)
+        dTp = Nu1loc.dtype
+        Nu1glob = np.array(0, dtype=dTp)
+        dTp = Rmsurfloc.dtype
+        Rmsurfglob = np.array(0, dtype=dTp)
+        #Do global sum
+        comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
+        comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
+        comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
+        # output to summary text file
+        if uw.rank()==0:
+            f_o.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
+                                              Rms,Rmsurfglob,Max_vx_surf,Gravwork, etamax, etamin, Viscdisair, Viscdislith))
     #if step %  steps_display_info == 0:
     # output image to file
     if (step % files_output == 0) & (writeFiles == True):
