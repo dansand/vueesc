@@ -27,14 +27,10 @@ outputFile = "Blankenbach"
 if not os.path.exists(outputPath):
     os.makedirs(outputPath)
 
-DEFAULT = 96
+RES = 96
 
-if len(sys.argv) == 1:
-    RES = DEFAULT
-elif sys.argv[1] == '-f':
-    RES = DEFAULT
-else:
-    RES = int(sys.argv[1])
+nproc = int(sys.argv[1])
+
 
 dim = 2
 Box_X = 1.0
@@ -191,4 +187,4 @@ while iloop == True:
 if uw.rank() == 0:
     machine_time = (time.clock()-start)
     with open("results/blankenbach.txt", "ab") as text_file:
-        text_file.write("\nMachineTime,%f,res,%i" % (machine_time,RES))
+        text_file.write("\nMachineTime,%f,nproc,%i" % (machine_time,nproc))
