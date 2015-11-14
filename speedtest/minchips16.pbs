@@ -13,4 +13,4 @@ module load python/2.7.9 hdf5/1.8.10 openmpi/1.8 pbs dot
 
 export PYTHONPATH=$PYTHONPATH:/short/m18/dds563/underworld2
 
-mpirun -np 16 python minimum_chips.py $i
+mpirun -np 16 python minimum_chips.py 16
