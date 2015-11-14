@@ -1,0 +1,16 @@
+#!/bin/bash
+#PBS -q express
+#PBS -P m18
+#PBS -l walltime=0:20:00
+#PBS -l mem=64GB
+#PBS -l ncpus=$PBS_ARRAY_INDEX
+#PBS -l wd
+
+
+module purge
+
+module load python/2.7.9 hdf5/1.8.10 openmpi/1.8 pbs dot
+
+export PYTHONPATH=$PYTHONPATH:/short/m18/dds563/underworld2
+
+mpirun -np $PBS_ARRAY_INDEX python minimum_chips.py $i

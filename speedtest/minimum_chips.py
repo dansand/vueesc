@@ -832,7 +832,7 @@ stressField.data[:] = stressinv
 
 # In[56]:
 
-swarm_update = min(20, np.floor(10.*RES/64))
+swarm_update = 10
 files_output = 400
 metric_output = 1
 

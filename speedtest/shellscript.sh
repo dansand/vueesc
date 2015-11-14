@@ -1,7 +1,7 @@
 #!/bin/bash
 for i in 4 8 16 32
 do
-    mpirun -np $i python minimum_chips.py A0.py $i
+    mpirun -np $i python minimum_chips.py $i
 #    echo $i
 done
 
