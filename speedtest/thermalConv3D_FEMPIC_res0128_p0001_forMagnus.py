@@ -27,7 +27,7 @@ outputFile = "Blankenbach"
 if not os.path.exists(outputPath):
     os.makedirs(outputPath)
 
-DEFAULT = 64
+DEFAULT = 96
 
 if len(sys.argv) == 1:
     RES = DEFAULT
@@ -49,7 +49,7 @@ BoxSize = (Box_X, Box_Y)
 # In[3]:
 
 elementMesh = uw.mesh.FeMesh_Cartesian( elementType=('Q1/dQ0'),
-                                         elementRes=(res,res),
+                                         elementRes=(RES,RES),
                                            minCoord=(0.,0.),
                                            maxCoord=BoxSize)
 velocityMesh    = elementMesh
@@ -191,4 +191,4 @@ while iloop == True:
 if uw.rank() == 0:
     machine_time = (time.clock()-start)
     with open("results/blankenbach.txt", "ab") as text_file:
-        text_file.write("\nMachineTime,%f,res,%i" % (machine_time,res))
+        text_file.write("\nMachineTime,%f,res,%i" % (machine_time,RES))
