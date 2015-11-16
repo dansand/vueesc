@@ -112,14 +112,14 @@ MAXY = 1.0
 
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 96
+DEFAULT = 1.
 
 if len(sys.argv) == 1:
-    RES = DEFAULT
+    YSTRESS = DEFAULT
 elif sys.argv[1] == '-f':
-    RES = DEFAULT
+    YSTRESS = DEFAULT
 else:
-    RES = int(sys.argv[1])
+    YSTRESS = float(sys.argv[1])*newvisc
 
 
 
