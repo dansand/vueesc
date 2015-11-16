@@ -229,7 +229,7 @@ temperatureField.data[:] = 0.
 
 #temperatureField.load('temp_ics/R(11)_2_96_init_temp.hdf5')
 if loadTemp == True:
-    if Model == "R":
+    if (Model == "R") and (ModNum == 2):
         if ModIt == str(96):
             temperatureField.load('temp_ics/R_2_96_init_temp.hdf5')
         elif ModIt == str(128):
@@ -238,7 +238,7 @@ if loadTemp == True:
             temperatureField.load('temp_ics/R_2_196_init_temp.hdf5')
         elif ModIt == str(256):
             temperatureField.load('temp_ics/R_2_256_init_temp.hdf5')
-    elif Model == "R[11]":
+    elif Model == "R[11]" and (ModNum == 2):
         if ModIt == str(96):
             temperatureField.load('temp_ics/R(11)_2_96_init_temp.hdf5')
         elif ModIt == str(128):
