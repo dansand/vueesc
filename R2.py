@@ -725,10 +725,12 @@ airdensity = RA*CompRAfact
 
 # In[41]:
 
-##This block for models with crust rheology;
+##This block sets up rheolgoy for models with crust rheology;
+
+viscreduct = 0.1
 
 #Von Mises effective viscosity
-crustviscosityp = ETA0 + ((0.1*YSTRESS)/(secinvCopy/math.sqrt(0.5))) #extra factor to account for underworld second invariant form
+crustviscosityp = viscreduct*ETA0 + ((viscreduct*YSTRESS)/(secinvCopy/math.sqrt(0.5))) #extra factor to account for underworld second invariant form
 crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 
 
