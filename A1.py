@@ -112,7 +112,7 @@ MAXY = 1.0
 
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 128
+DEFAULT = 96
 
 if len(sys.argv) == 1:
     RES = DEFAULT
@@ -962,30 +962,31 @@ while realtime < 0.15:
         if coord[1] >= (1 + 1.5*(yelsize)):
             temperatureField.data[index] = 0.
     # Calculate the Metrics, only on 1 of the processors:
-    tempVariable.data[:] = temperatureField.evaluate(gSwarm)[:]
-    Avg_temp = avg_temp()
-    Rms = rms()
-    Max_vx_surf = max_vx_surf(velocityField, surfintswarm)
-    Gravwork = gravwork(dwint)
-    Viscdis = viscdis(vdint)
-    Viscdisair = viscdis(vdintair)
-    Viscdislith = viscdis(vdintlith)
-    etamax, etamin = visc_extr(viscosityFn2)
-    #These are the ones that need mpi4py treatment
-    Nu0loc = nusselt(temperatureField, baseintswarm, dx)
-    Nu1loc = nusselt(temperatureField, surfintswarm, dx)
-    Rmsurfloc = rms_surf(surfintswarm, dx)
-    #Setup the global output arrays
-    dTp = Nu0loc.dtype
-    Nu0glob = np.array(0, dtype=dTp)
-    dTp = Nu1loc.dtype
-    Nu1glob = np.array(0, dtype=dTp)
-    dTp = Rmsurfloc.dtype
-    Rmsurfglob = np.array(0, dtype=dTp)
-    #Do global sum
-    comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
-    comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
-    comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
+    if (step % metric_output == 0):
+        tempVariable.data[:] = temperatureField.evaluate(gSwarm)[:]
+        Avg_temp = avg_temp()
+        Rms = rms()
+        Max_vx_surf = max_vx_surf(velocityField, surfintswarm)
+        Gravwork = gravwork(dwint)
+        Viscdis = viscdis(vdint)
+        Viscdisair = viscdis(vdintair)
+        Viscdislith = viscdis(vdintlith)
+        etamax, etamin = visc_extr(viscosityFn2)
+        #These are the ones that need mpi4py treatment
+        Nu0loc = nusselt(temperatureField, baseintswarm, dx)
+        Nu1loc = nusselt(temperatureField, surfintswarm, dx)
+        Rmsurfloc = rms_surf(surfintswarm, dx)
+        #Setup the global output arrays
+        dTp = Nu0loc.dtype
+        Nu0glob = np.array(0, dtype=dTp)
+        dTp = Nu1loc.dtype
+        Nu1glob = np.array(0, dtype=dTp)
+        dTp = Rmsurfloc.dtype
+        Rmsurfglob = np.array(0, dtype=dTp)
+        #Do global sum
+        comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
+        comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
+        comm.Allreduce(Rmsurfloc, Rmsurfglob, op=MPI.SUM)
     # output to summary text file
     if uw.rank()==0:
         f_o.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
