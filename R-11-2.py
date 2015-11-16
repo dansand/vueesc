@@ -235,7 +235,7 @@ if loadTemp == True:
         elif ModIt == str(128):
             temperatureField.load('temp_ics/R_2_128_init_temp.hdf5')
         elif ModIt == str(196):
-            temperatureField.load('temp_ics/R_2_196_init_temp.hdf5')
+            temperatureField.load('temp_ics/R_2_192_init_temp.hdf5')
         elif ModIt == str(256):
             temperatureField.load('temp_ics/R_2_256_init_temp.hdf5')
     elif Model == "R[11]" and (ModNum == 2):
