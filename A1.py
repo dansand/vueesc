@@ -922,6 +922,7 @@ swarm_update = np.floor(10.*RES/64)
 files_output = 200
 gldbs_output = 500
 checkpoint_every = 10000
+metric_output = np.floor(10.*RES/64)
 
 
 # In[53]:
