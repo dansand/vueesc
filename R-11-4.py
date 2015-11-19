@@ -51,7 +51,7 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "R"
+Model = "R[11]"
 ModNum = 4
 
 if len(sys.argv) == 1:
@@ -74,7 +74,7 @@ else:
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
 loadTemp = True
-refine_mesh = False
+refine_mesh = True
 square_model = True
 
 
@@ -1023,6 +1023,7 @@ viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
 figEta = plt.Figure()
 figEta.Points(gSwarm,viscVariable)
+figEta.Mesh(linearMesh)
 figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
 
 
