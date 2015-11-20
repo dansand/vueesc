@@ -1066,8 +1066,8 @@ start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-while realtime < 0.05:
-#while step < 10:
+#while realtime < 0.05:
+while step < 2:
     print step
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)

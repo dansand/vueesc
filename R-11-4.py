@@ -1022,9 +1022,10 @@ stressField.data[:] = stressinv
 viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
 figEta = plt.Figure()
-figEta.Points(gSwarm,viscVariable)
+figEta.Surface(temperatureField, elementMesh)
+#figEta.Points(gSwarm,viscVariable)
 figEta.Mesh(linearMesh)
-figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
+#figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
 
 
 # Main simulation loop
@@ -1042,7 +1043,7 @@ steps_end = 5
 steps_display_info = 20
 swarm_update = min(20, np.floor(10.*RES/64))
 files_output = 400
-gldbs_output = 1000
+gldbs_output = 1
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
@@ -1067,8 +1068,8 @@ start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-while realtime < 0.05:
-#while step < 10:
+#while realtime < 0.05:
+while step < 2:
     print step
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
