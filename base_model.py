@@ -74,7 +74,7 @@ else:
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
 loadTemp = True
-refineMesh = True
+refineMesh = False
 
 
 # In[5]:
@@ -102,17 +102,16 @@ ETA0 = 1e-3*newvisc
 RES = 40
 YSTRESS = 1.*newvisc
 D = 2890.
-MAXY = 1.05
+
 MINX = 0.
 ALPHA = 11.
+
+stickyAir = True
 
 
 # In[7]:
 
-if MAXY == 1.:
-    stickyAir = False
-else: 
-    stickyAir = True
+
     
 if MINX == 0.:
     squareModel = True
@@ -129,7 +128,7 @@ else:
     
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 96
+DEFAULT = 128
 ModIt   = str(DEFAULT)
     
     
@@ -169,18 +168,31 @@ if uw.rank()==0:
 
 dim = 2          # number of spatial dimensions
 
+
 if MINX == 0.:
-    Xres, Yres = RES, RES
+    Xres = RES
 else:
-    Xres, Yres = 2*RES, RES
+    Xres = 2*RES
     
-dim = 2          # number of spatial dimensions
+if stickyAir:
+    Yres = RES + 8
+    MAXY = float(Yres)/RES
+    
+else:
+    Yres = RES
+    MAXY = 1.
+    
 
 
 # In[11]:
 
+Xres, Yres
+
+
+# In[12]:
+
 yelsize = MAXY/Yres
-yelsize*D
+MAXY, yelsize, yelsize*D
 
 
 # Select which case of viscosity from Tosi et al (2015) to use. Adjust the yield stress to be =1 for cases 1-4, or between 3.0 and 5.0 (in increments of 0.1) in case 5.
@@ -189,19 +201,19 @@ yelsize*D
 
 # Create mesh objects. These store the indices and spatial coordiates of the grid points on the mesh.
 
-# In[12]:
+# In[13]:
 
 elementMesh = uw.mesh.FeMesh_Cartesian( elementType=("Q1/dQ0"), 
                                          elementRes=(Xres, Yres), 
                                            minCoord=(MINX,0.), 
-                                           maxCoord=(1.,MAXY), periodic=[True,False] )
+                                           maxCoord=(1.,MAXY), periodic=[False,False] )
 linearMesh   = elementMesh
 constantMesh = elementMesh.subMesh 
 
 
 # Create Finite Element (FE) variables for the velocity, pressure and temperature fields. The last two of these are scalar fields needing only one value at each mesh point, while the velocity field contains a vector of *dim* dimensions at each mesh point.
 
-# In[13]:
+# In[14]:
 
 velocityField    = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=dim )
 pressureField    = uw.fevariable.FeVariable( feMesh=constantMesh, nodeDofCount=1 )
@@ -209,29 +221,6 @@ temperatureField = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=1
 
 
 # Create some dummy fevariables for doing top and bottom boundary calculations.
-
-# #ICs and BCs
-
-# In[14]:
-
-# Initialise data.. Note that we are also setting boundary conditions here
-velocityField.data[:] = [0.,0.]
-pressureField.data[:] = 0.
-temperatureField.data[:] = 0.
-
-# Setup temperature initial condition via numpy arrays
-A = 0.01
-#Note that width = height = 1
-tempNump = temperatureField.data
-for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(1. - coord[0]) ) * math.sin( math.pi * coord[1] )
-    tempNump[index] = pertCoeff;
-    if coord[1] > 1:
-        tempNump[index] = 0.
-
-
-    
-
 
 # ##Refine mesh
 
@@ -284,13 +273,33 @@ if refineMesh:
 #             linearMesh.data[:,1] = newys
 #             linearMesh.data[:,0] = newxs
 
+# #ICs and BCs
+
 # In[16]:
+
+# Initialise data.. Note that we are also setting boundary conditions here
+velocityField.data[:] = [0.,0.]
+pressureField.data[:] = 0.
+temperatureField.data[:] = 0.
+
+# Setup temperature initial condition via numpy arrays
+A = 0.01
+#Note that width = height = 1
+tempNump = temperatureField.data
+for index, coord in enumerate(linearMesh.data):
+    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(1. - coord[0]) ) * math.sin( math.pi * coord[1] )
+    tempNump[index] = pertCoeff;
+    if coord[1] > 1:
+        tempNump[index] = 0.
+
+
+# In[17]:
 
 #For notebook runs
 #ModIt = "96"
 
 
-# In[17]:
+# In[18]:
 
 ########################################
 #No sticky air, square models
@@ -316,7 +325,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (
         temperatureField.load('temp_ics/r11_1.0_256_init_temp.hdf5') 
 
 
-# In[18]:
+# In[19]:
 
 ########################################
 #Sticky air, square models
@@ -324,26 +333,31 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (
 if (loadTemp == True) and (refineMesh == False) and (squareModel == True) and (stickyAir == True):
     print "True"
     if ModIt == str(96):
-        temperatureField.load('temp_ics/1.05_96_init_temp.hdf5')
+        temperatureField.load('temp_ics/sqa_96_init_temp.hdf5')
     elif ModIt == str(128):
-        temperatureField.load('temp_ics/1.05_128_init_temp.hdf5')
+        temperatureField.load('temp_ics/sqa_128_init_temp.hdf5')
     elif ModIt == str(192):
-        temperatureField.load('temp_ics/1.05_192_init_temp.hdf5')
+        temperatureField.load('temp_ics/sqa_192_init_temp.hdf5')
     elif ModIt == str(256):
-        temperatureField.load('temp_ics/1.05_256_init_temp.hdf5')
+        temperatureField.load('temp_ics/sqa_256_init_temp.hdf5')
 elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (stickyAir == True):
     print "True"
     if ModIt == str(96):
-        temperatureField.load('temp_ics/r11_1.05_96_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sqa_96_init_temp.hdf5')
     elif ModIt == str(128):
-        temperatureField.load('temp_ics/r11_1.05_128_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sqa_128_init_temp.hdf5')
     elif ModIt == str(192):
-        temperatureField.load('temp_ics/r11_1.05_192_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sqa_192_init_temp.hdf5')
     elif ModIt == str(256):
-        temperatureField.load('temp_ics/r11_1.05_256_init_temp.hdf5') 
+        temperatureField.load('temp_ics/r11_sqa_256_init_temp.hdf5') 
 
 
-# In[19]:
+# In[20]:
+
+ModIt
+
+
+# In[21]:
 
 ########################################
 #Sticky air, rectangular models
@@ -352,23 +366,23 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (
 if (loadTemp == True) and (refineMesh == False) and (squareModel == False) and (stickyAir == True):
     print "True"
     if ModIt == str(96):
-        temperatureField.load('temp_ics/96_init_temp.hdf5')
+        temperatureField.load('temp_ics/sa_96_init_temp.hdf5')
     elif ModIt == str(128):
-        temperatureField.load('temp_ics/128_init_temp.hdf5')
+        temperatureField.load('temp_ics/sa_128_init_temp.hdf5')
     elif ModIt == str(192):
-        temperatureField.load('temp_ics/192_init_temp.hdf5')
+        temperatureField.load('temp_ics/sa_192_init_temp.hdf5')
     elif ModIt == str(256):
-        temperatureField.load('temp_ics/256_init_temp.hdf5')
+        temperatureField.load('temp_ics/sa_256_init_temp.hdf5')
 elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and (stickyAir == True):
     print "True"
     if ModIt == str(96):
-        temperatureField.load('temp_ics/r11_96_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sa_96_init_temp.hdf5')
     elif ModIt == str(128):
-        temperatureField.load('temp_ics/r11_128_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sa_128_init_temp.hdf5')
     elif ModIt == str(192):
-        temperatureField.load('temp_ics/r11_192_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sa_192_init_temp.hdf5')
     elif ModIt == str(256):
-        temperatureField.load('temp_ics/r11_256_init_temp.hdf5')
+        temperatureField.load('temp_ics/r11_sa_256_init_temp.hdf5')
 
 
 # dres = 96
@@ -383,24 +397,25 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and 
 # 
 # for index, coord in enumerate(linearMesh.data):
 #     #This bit determines whether you see a reflected image or not
-#     xpos, ypos = (1.- abs(coord[0])), coord[1]
-#     #xpos, ypos = (abs(coord[0])), coord[1]
+#     #xpos, ypos = (1.- abs(coord[0])), coord[1]
+#     xpos, ypos = (abs(coord[0])), coord[1]
 #     if ypos >= 1:
 #         temperatureField.data[index] = 0.
 #     else:
 #         #print(dummytemperatureField.evaluate((xpos, ypos)))
-#         randpert = np.random.rand(1)[0]*(50./2500)
+#         #randpert = np.random.rand(1)[0]*(50./2500)
+#         randpert = 0.
 #         #Don't know mesh partitions in advance, and possible diferent between 'real' and 'dummy' mesh
 #         try:
 #             temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos))  + randpert
 #         except:
 #             pass
 #             
-# #temperatureField.save('temp_ics/r11_256_init_temp.hdf5')
+# temperatureField.save('temp_ics/r11_sa_96_init_temp.hdf5')
 
 # 
 
-# In[20]:
+# In[22]:
 
 #icfnam= "R(11)_" + "2_" + str(RES) + "_init_temp.hdf5"
 #icpath = "temp_ics/" + icfnam 
@@ -410,7 +425,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and 
 #icpath
 
 
-# In[21]:
+# In[23]:
 
 # Get the actual sets 
 #
@@ -434,7 +449,7 @@ BWalls = linearMesh.specialSets["MinJ_VertexSet"]
 
 
 
-# In[22]:
+# In[24]:
 
 # Now setup the dirichlet boundary condition
 # Note that through this object, we are flagging to the system 
@@ -448,7 +463,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
                                               nodeIndexSets=(JWalls,) )
 
 
-# In[23]:
+# In[25]:
 
 # Set temp boundaries 
 # on the boundaries
@@ -460,7 +475,7 @@ for index in linearMesh.specialSets["MaxJ_VertexSet"]:
 
 # #Particles
 
-# In[24]:
+# In[26]:
 
 # We create swarms of particles which can advect, and which may determine 'materials'
 gSwarm = uw.swarm.Swarm( feMesh=elementMesh )
@@ -504,7 +519,7 @@ materialVariable.data[:] = mantleIndex
 
 
 
-# In[25]:
+# In[27]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -512,7 +527,7 @@ materialVariable.data[:] = mantleIndex
 material_list = [0,1,2,3]
 
 
-# In[26]:
+# In[28]:
 
 #All depth conditions are given as (km/D) where D is the length scale, 
 #note that 'model depths' are used, e.g. 1-z, where z is the vertical Underworld coordinate
@@ -543,7 +558,7 @@ dz = 50./D
 avgtemp = 0.5
 
 
-# In[27]:
+# In[29]:
 
 import networkx as nx
 
@@ -589,12 +604,12 @@ DG[0][2]['depthcondition'] = CrustM
 DG[1][2]['depthcondition'] = CrustM
 
 
-# In[28]:
+# In[30]:
 
 DG.nodes()
 
 
-# In[29]:
+# In[31]:
 
 remove_nodes = []
 for node in DG.nodes():
@@ -605,12 +620,12 @@ for rmnode in remove_nodes:
     DG.remove_node(rmnode)
 
 
-# In[30]:
+# In[32]:
 
 DG.nodes()
 
 
-# In[31]:
+# In[33]:
 
 #remove_nodes = []
 #for node in DG.nodes_iter():
@@ -621,7 +636,7 @@ DG.nodes()
 #    DG.remove_node(rmnode)
 
 
-# In[32]:
+# In[34]:
 
 #A Dictionary to map strings in the graph (e.g. 'depthcondition') to particle data arrays
 
@@ -636,7 +651,7 @@ conditionmap['avgtempcondition'] = {}
 conditionmap['avgtempcondition']['data'] = particletemps
 
 
-# In[33]:
+# In[35]:
 
 def update_swarm(graph, particleIndex):
     """
@@ -692,7 +707,7 @@ def update_swarm(graph, particleIndex):
 #                     #number_updated += 1
 #                     materialVariable.data[particleID] = check
 
-# In[34]:
+# In[36]:
 
 #Cleanse the swarm of its sins
 #For some Material Graphs, the graph may have to be treaversed more than once
@@ -709,7 +724,7 @@ while number_updated != 0:
                     materialVariable.data[particleID] = check
 
 
-# In[35]:
+# In[37]:
 
 #figtemp = plt.Figure()
 #tempminmax = fn.view.min_max(temperatureField)
@@ -723,7 +738,7 @@ while number_updated != 0:
 
 # ##Set the values for the masking swarms
 
-# In[37]:
+# In[38]:
 
 #Setup up a masking Swarm variable for the integrations.
 #Two possible problems? 
@@ -747,12 +762,11 @@ lithIntVar.data[islith] = 1.
 # ##Set up a swarm for surface integrations¶
 # 
 
-# In[38]:
+# In[39]:
 
 snum = 1000.
-elsize = (linearMesh.data[:,0].max()- linearMesh.data[:,0].min())/linearMesh.elementRes[0]
 dx = (linearMesh.data[:,0].max()- linearMesh.data[:,0].min())/snum
-yp = 1. - elsize/2.
+yp = 0.9947 #1. - yelsize/2. at res = 96
 
 linearMesh.data[:,0].max()
 xps = np.linspace(linearMesh.data[:,0].min(),linearMesh.data[:,0].max(), snum)
@@ -761,13 +775,13 @@ yps = [yp for i in xps]
 surfintswarm = uw.swarm.Swarm( feMesh=elementMesh )
 dumout = surfintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
-yps = [(elsize/8.) for i in xps]
+yps = [ 1.- yp  for i in xps]
 
 baseintswarm = uw.swarm.Swarm( feMesh=elementMesh )
 dumout = baseintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
 
-# In[39]:
+# In[40]:
 
 # visualise
 #fig1 = plt.Figure()
@@ -789,7 +803,7 @@ dumout = baseintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
 
 
-# In[40]:
+# In[41]:
 
 #Make variables required for plasticity
 
@@ -802,7 +816,7 @@ coordinate = fn.input()
 depth = 1. - coordinate[1]
 
 
-# In[41]:
+# In[42]:
 
 depthField = uw.fevariable.FeVariable( feMesh=linearMesh,   nodeDofCount=1 )
 
@@ -816,7 +830,7 @@ depthField.data[np.where(depthField.data[:] < 0.)[0]] = 0.
 
 
 
-# In[42]:
+# In[43]:
 
 
 viscosityl2 = newvisc*fn.math.exp((math.log(ETA_T)*-1*temperatureField) + (depthField*math.log(ETA_Y)))
@@ -830,7 +844,7 @@ viscosityp = ETA0 + YSTRESS/(secinvCopy/math.sqrt(0.5)) #extra factor to account
 viscosityFn2 = 2./(1./viscosityl2 + 1./viscosityp)
 
 
-# In[43]:
+# In[44]:
 
 #Compositional Rayligh number of rock-water 
 
@@ -844,7 +858,7 @@ eta0 = rho*g*a*dT*((D*1e3)**3)/(RA*kappa)
 Rc = (3300*g*(D*1000)**3)/(eta0*kappa)
 
 
-# In[44]:
+# In[45]:
 
 CompRAfact = Rc/RA
 
@@ -852,7 +866,7 @@ airviscosity = 0.001*viscosityl2.evaluate(linearMesh).min()
 airdensity = RA*CompRAfact
 
 
-# In[45]:
+# In[46]:
 
 ##This block sets up rheolgoy for models with crust rheology;
 
@@ -868,11 +882,11 @@ crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 # 
 # Here the functions for density, viscosity etc. are set. These functions and/or values are preserved for the entire simulation time. 
 
-# In[46]:
+# In[47]:
 
 # Here we set a viscosity value of '1.' for both materials
 viscosityMapFn = fn.branching.map( keyFunc = materialVariable,
-                         mappingDict = {airIndex:airviscosity, lithosphereIndex:viscosityFn2, crustIndex:crustviscosityFn2,mantleIndex:viscosityFn2} )
+                         mappingDict = {airIndex:airviscosity, lithosphereIndex:viscosityFn2, crustIndex:viscosityFn2,mantleIndex:viscosityFn2} )
 
 densityMapFn = fn.branching.map( keyFunc = materialVariable,
                          mappingDict = {airIndex:airdensity, lithosphereIndex:RA*temperatureField, crustIndex:RA*temperatureField, mantleIndex:RA*temperatureField} )
@@ -888,7 +902,7 @@ buoyancyFn = gravity*densityMapFn
 # 
 # Setup linear Stokes system to get the initial velocity.
 
-# In[47]:
+# In[48]:
 
 #We first set up a l
 stokesPIC = uw.systems.Stokes(velocityField=velocityField, 
@@ -901,12 +915,12 @@ stokesPIC = uw.systems.Stokes(velocityField=velocityField,
 
 # We do one solve with linear viscosity to get the initial strain rate invariant. This solve step also calculates a 'guess' of the the velocity field based on the linear system, which is used later in the non-linear solver.
 
-# In[48]:
+# In[49]:
 
 stokesPIC.solve()
 
 
-# In[49]:
+# In[50]:
 
 # Setup the Stokes system again, now with linear or nonlinear visocity viscosity.
 stokesPIC2 = uw.systems.Stokes(velocityField=velocityField, 
@@ -916,7 +930,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               bodyForceFn=buoyancyFn )
 
 
-# In[50]:
+# In[51]:
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
@@ -937,7 +951,7 @@ solver.options.mg_accel.mg_smooths_to_start = 1
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
 # 
 
-# In[51]:
+# In[52]:
 
 solver.solve(nonLinearIterate=True)
 
@@ -947,7 +961,7 @@ solver.solve(nonLinearIterate=True)
 # 
 # Setup the system in underworld by flagging the temperature and velocity field variables.
 
-# In[52]:
+# In[53]:
 
 #Create advdiff system
 advDiff = uw.systems.AdvectionDiffusion( temperatureField, velocityField, diffusivity=1., conditions=[tempBC,] )
@@ -971,7 +985,7 @@ advector = uw.systems.SwarmAdvector( swarm=gSwarm, velocityField=velocityField, 
 # 
 # $$ \delta = \frac{\lvert \langle W \rangle - \frac{\langle \Phi \rangle}{Ra} \rvert}{max \left(  \langle W \rangle,  \frac{\langle \Phi \rangle}{Ra}\right)} \times 100% $$
 
-# In[363]:
+# In[54]:
 
 #Setup some Integrals. We want these outside the main loop...
 tempVariable = gSwarm.add_variable( dataType="double", count=1 )
@@ -996,7 +1010,7 @@ vdintair = uw.utils.Integral((4.*viscosityFn2*sinner)*airIntVar, linearMesh)
 vdintlith = uw.utils.Integral((4.*viscosityFn2*sinner)*lithIntVar, linearMesh)
 
 
-# In[364]:
+# In[55]:
 
 def avg_temp():
     return tempint.evaluate()[0]
@@ -1047,7 +1061,7 @@ def visc_extr(viscfn):
     return vuviscfn.max_global(), vuviscfn.min_global()
 
 
-# In[365]:
+# In[56]:
 
 #Fields for saving data / fields
 
@@ -1086,7 +1100,7 @@ figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
 # The main time stepping loop begins here. Before this the time and timestep are initialised to zero and the output statistics arrays are set up. Also the frequency of outputting basic statistics to the screen is set in steps_output.
 # 
 
-# In[366]:
+# In[57]:
 
 realtime = 0.
 step = 0
@@ -1100,7 +1114,7 @@ checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
 
-# In[367]:
+# In[58]:
 
 def checkpoint(step, path):
     velfile = "velocityField" + str(step) + ".hdf5"
@@ -1113,16 +1127,15 @@ def checkpoint(step, path):
     gSwarm.save(os.path.join(path, swarmfile))
 
 
-# In[368]:
+# In[57]:
 
 # initialise timer for computation
 start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-#while realtime < 0.15:
-while step < 2:
-    print step
+while realtime < 0.05:
+#while step < 2:
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
@@ -1225,7 +1238,7 @@ f_o.close()
 checkpoint(step, checkpointPath)
 
 
-# In[369]:
+# In[58]:
 
 #vdfield = densityMapFn
 #vdVariable = gSwarm.add_variable( dataType="float", count=1)
@@ -1240,37 +1253,47 @@ checkpoint(step, checkpointPath)
 #fig1.show()
 
 
-# In[37]:
+# In[62]:
 
-fig1 = plt.Figure()
+#fig1 = plt.Figure()
 #fig1.Surface(buoyancyFn[1], elementMesh)
-fig1.Surface(temperatureField, elementMesh)
+#fig1.Surface(temperatureField, elementMesh)
 #fig1.Points( swarm=gSwarm, colourVariable=materialVariable , pointSize=0.5, colours='white blue red black')
-#fig1.Points( swarm=gSwarm, colourVariable=rockIntVar, pointSize=1.0)
-fig1.Mesh(linearMesh)
+#fig1.Mesh(linearMesh)
 #fig1.VectorArrows(velocityField, linearMesh, lengthScale=0.002)
-fig1.show()
+#fig1.Points( swarm=baseintswarm,  pointSize=2.0)
+
+#fig1.show()
 #fig1.save_database('test_mesh_refine.gldb')
 
 
-# In[614]:
+# In[60]:
 
 #visplot = viscosityMapFn.evaluate(linearMesh)
 
 
-# In[38]:
+# In[60]:
 
 #viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 #viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-figEta = plt.Figure()
+#figEta = plt.Figure()
 #figEta.Points(gSwarm,viscVariable, colours='brown white red blue')
 #figEta.VectorArrows(velocityField, linearMesh, lengthScale=0.002)
-figEta.Points(gSwarm,materialVariable, colours='brown white blue')
+#figEta.Points(gSwarm,materialVariable, colours='brown white blue')
+#figEta.Points(gSwarm,rockIntVar, colours='red black')
+#figEta.Points( swarm=surfintswarm,  pointSize=2.0)
+
+#figEta.Mesh(linearMesh)
+#figEta.save_database('test_mesh_refine.gldb')
+
+
+
+
 #figEta.Points(gSwarm,materialVariable)
-figEta.show()
+#figEta.show()
 
 
-# In[60]:
+# In[63]:
 
 #figEta.show()
 
