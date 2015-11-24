@@ -129,7 +129,6 @@ else:
 #Watch the type assignemnt on sys.argv[1]
 
 DEFAULT = 144
-ModIt   = str(DEFAULT)
 
 
 if len(sys.argv) == 1:
