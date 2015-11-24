@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=15)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=20)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -950,7 +950,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               pressureField=pressureField,
                               conditions=[freeslipBC,],
                               viscosityFn=fn.exception.SafeMaths(viscosityMapFn),
-                              bodyForceFn=buoyancyFn )
+                              bodyForceFn=buoyancyFn, swarm=gSwarm)
 
 
 # In[126]:
@@ -1164,6 +1164,7 @@ f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 while realtime < 0.05:
 #while step < 2:
+    print str(step)
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
