@@ -1,6 +1,5 @@
 #!/bin/bash
-for i in $(seq 3 0.2 5.2)
+for i in  3 6 12 24
 do
-    mpirun -np 16 python A0.py $i
-#    echo $i
+    mpirun -np 16 python R-11-100.py $i
 done

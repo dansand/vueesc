@@ -52,7 +52,7 @@ rank = comm.Get_rank()
 #Need to manually set these two
 ############
 Model = "R[11]"
-ModNum = 4
+ModNum = 100
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -128,16 +128,11 @@ else:
 
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 144
+DEFAULT = 128
 
 
-if len(sys.argv) == 1:
-    RES = DEFAULT
-elif sys.argv[1] == '-f':
-    RES = DEFAULT
-else:
-    RES = int(sys.argv[1])
 
+RES = DEFAULT
 
 
 # In[614]:
@@ -1135,9 +1130,9 @@ step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = min(20, np.floor(10.*RES/64))
+swarm_update = float(sys.argv[1])
 files_output = 400
-gldbs_output = 1
+gldbs_output = 1000
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 

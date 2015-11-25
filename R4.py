@@ -73,7 +73,7 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
-loadTemp = True
+loadTemp = False
 refineMesh = False
 
 
@@ -291,7 +291,7 @@ A = 0.01
 #Note that width = height = 1
 tempNump = temperatureField.data
 for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(1. - coord[0]) ) * math.sin( math.pi * coord[1] )
+    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(coord[0]) ) * math.sin( math.pi * coord[1] )
     tempNump[index] = pertCoeff;
     if coord[1] > 1:
         tempNump[index] = 0.
