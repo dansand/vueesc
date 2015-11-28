@@ -1110,12 +1110,14 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
+
 viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-figEta = plt.Figure()
-figEta.Points(gSwarm,viscVariable)
-figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
+figEta = glucifer.Figure()
+figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+figEta + glucifer.objects.Points(gSwarm,viscVariable)
 
+figEta.show()
 
 # Main simulation loop
 # =======
@@ -1130,9 +1132,9 @@ step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = min(20, np.floor(10.*RES/64))
+swarm_update = 10.
 files_output = 400
-gldbs_output = 1000
+gldbs_output = 1
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
@@ -1258,7 +1260,7 @@ while realtime < 0.05:
         #  .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
 
 f_o.close()
-checkpoint(step, checkpointPath)
+#checkpoint(step, checkpointPath)
 
 
 # In[58]:

@@ -51,7 +51,7 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "R[11]x"
+Model = "T[11]"
 ModNum = 4
 
 if len(sys.argv) == 1:
@@ -73,7 +73,7 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
-loadTemp = True
+loadTemp = False
 refineMesh = True
 
 
@@ -128,7 +128,7 @@ else:
 
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 96
+DEFAULT = 144
 
 
 if len(sys.argv) == 1:
@@ -291,7 +291,7 @@ A = 0.01
 #Note that width = height = 1
 tempNump = temperatureField.data
 for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(1. - coord[0]) ) * math.sin( math.pi * coord[1] )
+    pertCoeff = (1- coord[1]) + A*math.cos( math.pi * abs(coord[0]) ) * math.sin( math.pi * coord[1] )
     tempNump[index] = pertCoeff;
     if coord[1] > 1:
         tempNump[index] = 0.
@@ -884,7 +884,7 @@ Rc = (3300*g*(D*1000)**3)/(eta0*kappa)
 
 CompRAfact = Rc/RA
 
-airviscosity = 0.001
+airviscosity = 0.001*viscosityl2.evaluate(linearMesh).min()
 airdensity = RA*CompRAfact
 
 
@@ -938,19 +938,8 @@ stokesPIC = uw.systems.Stokes(velocityField=velocityField,
 # We do one solve with linear viscosity to get the initial strain rate invariant. This solve step also calculates a 'guess' of the the velocity field based on the linear system, which is used later in the non-linear solver.
 
 # In[124]:
-solver = uw.systems.Solver(stokesPIC)
 
-solver.options.main.Q22_pc_type='uw'
-
-solver.options.A11.ksp_rtol=1e-6
-solver.options.scr.ksp_rtol=1e-5
-solver.options.scr.use_previous_guess = True
-solver.options.scr.ksp_set_min_it_converge = 6
-
-solver.options.mg.levels = 4
-
-solver.options.A11.ksp_monitor=''
-solver.solve()
+stokesPIC.solve()
 
 #Switch particle escape on, this will also trigger the inflow population control
 gSwarm.particleEscape = True
@@ -968,15 +957,19 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
-solver.options.main.Q22_pc_type='uw'
+solver.options.main.Q22_pc_type='uwscale'  # also try 'gtkg', 'gkgdiag' and 'uwscale'
+solver.options.main.penalty = 1.0
 solver.options.A11.ksp_rtol=1e-7
 solver.options.scr.ksp_rtol=1e-6
 solver.options.scr.use_previous_guess = True
-solver.options.scr.ksp_set_min_it_converge = 6
-
+solver.options.scr.ksp_set_min_it_converge = 1
+solver.options.scr.ksp_set_max_it = 100
 solver.options.mg.levels = 4
+solver.options.mg.mg_levels_ksp_type = 'chebyshev'
+solver.options.mg_accel.mg_accelerating_smoothing = True
+solver.options.mg_accel.mg_accelerating_smoothing_view = False
+solver.options.mg_accel.mg_smooths_to_start = 1
 
-solver.options.A11.ksp_monitor=''
 
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
 #
@@ -1117,12 +1110,15 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-
 viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
 figEta = glucifer.Figure()
 figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
-figEta + glucifer.objects.Points(gSwarm,viscVariable)
+#figEta + glucifer.objects.Points(gSwarm,viscVariable)
+figEta + glucifer.objects.Mesh(linearMesh)
+
+figEta.show()
+figEta.save_database('test.gldb')
 
 
 # Main simulation loop
@@ -1138,11 +1134,11 @@ step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = min(20, np.floor(10.*RES/64))
+swarm_update = 10
 files_output = 400
-gldbs_output = 400
+gldbs_output = 1
 checkpoint_every = 10000
-metric_output = 1.
+metric_output = np.floor(10.*RES/64)
 
 
 # In[133]:
@@ -1166,14 +1162,8 @@ start = time.clock()
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 #while realtime < 0.05:
-green='\033[92m'
-endcol='\033[0m'
-dt=0.0
-while step < 20:
-    print green
-    print "step =" + str(step)
-    print "dt =" + str(dt)
-    print endcol
+while step < 3:
+    print str(step)
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
