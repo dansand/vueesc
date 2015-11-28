@@ -52,7 +52,7 @@ rank = comm.Get_rank()
 #Need to manually set these two
 ############
 Model = "R[11]"
-ModNum = 4
+ModNum = 2
 
 if len(sys.argv) == 1:
     ModIt = "Base"

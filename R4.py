@@ -34,7 +34,7 @@
 import underworld as uw
 import math
 from underworld import function as fn
-import glucifer.pylab as plt
+import glucifer
 #import matplotlib.pyplot as pyplot
 import time
 import numpy as np
@@ -957,23 +957,18 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
-solver.options.main.Q22_pc_type='uw'
-solver.options.main.penalty = 0.0
-solver.options.A11.ksp_rtol=1e-6
-solver.options.scr.ksp_rtol=1e-5
+solver.options.main.Q22_pc_type='uwscale'  # also try 'gtkg', 'gkgdiag' and 'uwscale'
+solver.options.main.penalty = 1.0
+solver.options.A11.ksp_rtol=1e-7
+solver.options.scr.ksp_rtol=1e-6
 solver.options.scr.use_previous_guess = True
 solver.options.scr.ksp_set_min_it_converge = 1
-
-solver.options.mg.levels = 5
+solver.options.scr.ksp_set_max_it = 100
+solver.options.mg.levels = 4
 solver.options.mg.mg_levels_ksp_type = 'chebyshev'
 solver.options.mg_accel.mg_accelerating_smoothing = True
 solver.options.mg_accel.mg_accelerating_smoothing_view = False
 solver.options.mg_accel.mg_smooths_to_start = 1
-solver.options.A11.ksp_rtol=1e-6
-solver.options.mg.mg_levels_ksp_max_its = 3
-solver.options.mg.mg_coarse_ksp_max_it = 3
-solver.options.mg.pc_mg_smoothup = 5
-solver.options.mg.pc_mg_smoothdown = 5
 
 
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
