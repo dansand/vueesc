@@ -34,7 +34,7 @@
 import underworld as uw
 import math
 from underworld import function as fn
-import glucifer.pylab as plt
+import glucifer
 #import matplotlib.pyplot as pyplot
 import time
 import numpy as np
@@ -244,7 +244,7 @@ BWalls = linearMesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions.
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField,
-                                              nodeIndexSets=(IWalls,JWalls) )
+                                              nodeIndexSets=(None,JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
@@ -742,22 +742,20 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
 
 
 # In[46]:
-
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
 solver.options.main.Q22_pc_type='uwscale'  # also try 'gtkg', 'gkgdiag' and 'uwscale'
 solver.options.main.penalty = 1.0
-solver.options.A11.ksp_rtol=1e-6
-solver.options.scr.ksp_rtol=1e-5
+solver.options.A11.ksp_rtol=1e-7
+solver.options.scr.ksp_rtol=1e-6
 solver.options.scr.use_previous_guess = True
 solver.options.scr.ksp_set_min_it_converge = 1
 solver.options.scr.ksp_set_max_it = 100
-solver.options.mg.levels = 5
+solver.options.mg.levels = 4
 solver.options.mg.mg_levels_ksp_type = 'chebyshev'
 solver.options.mg_accel.mg_accelerating_smoothing = True
 solver.options.mg_accel.mg_accelerating_smoothing_view = False
 solver.options.mg_accel.mg_smooths_to_start = 1
-
 
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
 #
@@ -898,11 +896,16 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-viscVariable = gSwarm.add_variable( dataType="float", count=1 )
-viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-figEta = plt.Figure()
-figEta.Points(gSwarm,viscVariable)
-figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
+#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+#figEta = glucifer.Figure()
+#figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+#figEta + glucifer.objects.Points(gSwarm,viscVariable)
+#figEta + glucifer.objects.Mesh(linearMesh)
+
+#figEta.show()
+
+
 
 
 # Main simulation loop
@@ -920,7 +923,7 @@ steps_end = 5
 steps_display_info = 20
 swarm_update = np.floor(10.*RES/64)
 files_output = 200
-gldbs_output = 500
+gldbs_output = 1e5
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
@@ -944,7 +947,7 @@ start = time.clock()
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 while realtime < 0.40:
-#while step < 3:
+#while step < 1:
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()
@@ -1045,7 +1048,7 @@ while realtime < 0.40:
           .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
 
 f_o.close()
-checkpoint(step, checkpointPath)
+#checkpoint(step, checkpointPath)
 
 
 # In[ ]:
@@ -1065,15 +1068,12 @@ checkpoint(step, checkpointPath)
 
 # In[53]:
 
-#fig1 = plt.Figure()
-#fig1.Surface(buoyancyFn[1], elementMesh)
-#fig1.Surface(temperatureField, elementMesh, colours='blue white brown')
-#fig1.Points( swarm=gSwarm, colourVariable=materialVariable , pointSize=1.0, colours='white red black')
-#fig1.Points( swarm=gSwarm, colourVariable=rockIntVar, pointSize=1.0)
-#fig1.Mesh(linearMesh)
-#fig1.VectorArrows(velocityField, linearMesh, lengthScale=0.2)
-#fig1.show()
-
+#fig3 = glucifer.Figure( figsize=(800,400) )
+#velmagfield = uw.function.math.sqrt( uw.function.math.dot(velocityField,velocityField) )
+#fig3 + glucifer.objects.VectorArrows( elementMesh, velocityField, arrowHead=0.3, scaling=0.1, glyphs=3, )
+#fig3 + glucifer.objects.Surface(elementMesh, velmagfield )
+#fig3.show()
+#fig3.save_database('test.gldb')
 
 # In[ ]:
 
@@ -1102,4 +1102,4 @@ checkpoint(step, checkpointPath)
 #figEta.show()
 
 
-# In[ ]:
+print("velocity max on horizontal bounds is: " + str(velocityField[0].evaluate(IWalls).max()))

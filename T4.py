@@ -51,7 +51,7 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "R[11]"
+Model = "R"
 ModNum = 4
 
 if len(sys.argv) == 1:
@@ -74,7 +74,7 @@ else:
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
 loadTemp = False
-refineMesh = True
+refineMesh = False
 
 
 # In[610]:
@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=20)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=10)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -950,7 +950,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               pressureField=pressureField,
                               conditions=[freeslipBC,],
                               viscosityFn=fn.exception.SafeMaths(viscosityMapFn),
-                              bodyForceFn=buoyancyFn)
+                              bodyForceFn=buoyancyFn, swarm=gSwarm)
 
 
 # In[126]:
@@ -1110,13 +1110,14 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
-#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-#figEta = glucifer.Figure()
-#figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
-#figEta + glucifer.objects.Points(gSwarm,viscVariable)
-#figEta.show()
 
+viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+figEta = glucifer.Figure()
+figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+figEta + glucifer.objects.Points(gSwarm,viscVariable)
+
+figEta.show()
 
 # Main simulation loop
 # =======
@@ -1133,7 +1134,7 @@ steps_end = 5
 steps_display_info = 20
 swarm_update = 10.
 files_output = 250
-gldbs_output = 1e5
+gldbs_output = 1000
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
@@ -1158,9 +1159,8 @@ start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-while realtime < 0.05:
-#while step < 2:
-    print str(step)
+#while realtime < 0.05:
+while step < 10:
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
     dt = advDiff.get_max_dt()

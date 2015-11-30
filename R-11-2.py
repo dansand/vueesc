@@ -34,7 +34,7 @@
 import underworld as uw
 import math
 from underworld import function as fn
-import glucifer.pylab as plt
+import glucifer
 #import matplotlib.pyplot as pyplot
 import time
 import numpy as np
@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=20)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=10)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -1115,11 +1115,11 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-viscVariable = gSwarm.add_variable( dataType="float", count=1 )
-viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-figEta = plt.Figure()
-figEta.Points(gSwarm,viscVariable)
-figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
+#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+#figEta = plt.Figure()
+#figEta.Points(gSwarm,viscVariable)
+#figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
 
 
 # Main simulation loop
@@ -1137,7 +1137,7 @@ steps_end = 5
 steps_display_info = 20
 swarm_update = min(20, np.floor(10.*RES/64))
 files_output = 400
-gldbs_output = 1000
+gldbs_output = 1e5
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
