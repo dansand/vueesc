@@ -884,7 +884,7 @@ Rc = (3300*g*(D*1000)**3)/(eta0*kappa)
 
 CompRAfact = Rc/RA
 
-airviscosity = 0.001*viscosityl2.evaluate(linearMesh).min()
+airviscosity = 0.001
 airdensity = RA*CompRAfact
 
 
@@ -950,7 +950,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               pressureField=pressureField,
                               conditions=[freeslipBC,],
                               viscosityFn=fn.exception.SafeMaths(viscosityMapFn),
-                              bodyForceFn=buoyancyFn, swarm=gSwarm)
+                              bodyForceFn=buoyancyFn)
 
 
 # In[126]:
@@ -1135,7 +1135,7 @@ step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = min(20, np.floor(10.*RES/64))
+swarm_update = 10
 files_output = 400
 gldbs_output = 1e5
 checkpoint_every = 10000
