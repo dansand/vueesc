@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=5)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=10)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -1130,6 +1130,9 @@ stressField.data[:] = stressinv
 
 # In[132]:
 
+pics = uw.swarm.PICIntegrationSwarm(gSwarm)
+
+
 realtime = 0.
 step = 0
 timevals = [0.]
@@ -1163,7 +1166,7 @@ start = time.clock()
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 while realtime < 0.05:
-#while step < 2:
+#while step < 10:
     print str(step)
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
@@ -1259,12 +1262,11 @@ while realtime < 0.05:
         lithIntVar.data[:] = 0.
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
-        #Also print some info at this step increment
-        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
-        #  .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
+        #Also repopulate
+        pics.repopulate()
 
 f_o.close()
-checkpoint(step, checkpointPath)
+#checkpoint(step, checkpointPath)
 
 
 # In[58]:
@@ -1316,7 +1318,15 @@ checkpoint(step, checkpointPath)
 #figEta.save_database('test_mesh_refine.gldb')
 
 
+#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+figEta = glucifer.Figure()
+figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+#figEta + glucifer.objects.Points(gSwarm,viscVariable)
+figEta + glucifer.objects.Mesh(elementMesh)
 
+figEta.show()
+figEta.save_database('test.gldb')
 
 #figEta.Points(gSwarm,materialVariable)
 #figEta.show()
