@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=10)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=15)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -1139,6 +1139,7 @@ timevals = [0.]
 steps_end = 5
 steps_display_info = 20
 swarm_update = 10
+swarm_repop = 100
 files_output = 400
 gldbs_output = 1e5
 checkpoint_every = 10000
@@ -1166,7 +1167,7 @@ start = time.clock()
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
 while realtime < 0.05:
-#while step < 10:
+#while step < 300:
     print str(step)
     #Enter non-linear loop
     solver.solve(nonLinearIterate=True)
@@ -1262,7 +1263,8 @@ while realtime < 0.05:
         lithIntVar.data[:] = 0.
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
-        #Also repopulate
+    #Also repopulate
+    if step % swarm_repop == 0:
         pics.repopulate()
 
 f_o.close()

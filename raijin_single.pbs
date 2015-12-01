@@ -1,7 +1,7 @@
 #!/bin/bash
-#PBS -q normal
+#PBS -q express
 #PBS -P m18
-#PBS -l walltime=12:00:00
+#PBS -l walltime=01:00:00
 #PBS -l mem=64GB
 #PBS -l ncpus=64
 #PBS -l wd
@@ -11,6 +11,6 @@ module purge
 
 module load python/2.7.9 hdf5/1.8.10 openmpi/1.8 pbs dot
 
-export PYTHONPATH=$PYTHONPATH:/short/m18/dds563/underworld2
+export PYTHONPATH=$PYTHONPATH:/short/m18/dds563/bleedingedge/underworld2
 
-mpirun -np 64 python R-11-100.py
+mpirun -np 64 python T-11-2.py
