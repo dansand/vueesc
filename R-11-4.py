@@ -507,7 +507,7 @@ lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
 # Layouts are used to populate the swarm across the whole domain
 # Create the layout object
 #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=10)
+layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=15)
 # Now use it to populate.
 gSwarm.populate_using_layout( layout=layout )
 
@@ -1125,6 +1125,8 @@ stressField.data[:] = stressinv
 #
 
 # In[132]:
+
+pics = uw.swarm.PICIntegrationSwarm(gSwarm)
 
 realtime = 0.
 step = 0
