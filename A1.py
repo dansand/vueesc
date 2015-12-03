@@ -251,7 +251,11 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
                                               nodeIndexSets=(JWalls,) )
 
 
-# In[17]:
+tempNump = temperatureField.data
+for index, coord in enumerate(linearMesh.data):
+    pertCoeff = (0.05*np.random.rand(1)[0])
+    ict = tempNump[index]
+    tempNump[index] = ict + pertCoeff
 
 # Set temp boundaries
 # on the boundaries
@@ -259,6 +263,8 @@ for index in linearMesh.specialSets["MinJ_VertexSet"]:
     temperatureField.data[index] = TB
 for index in linearMesh.specialSets["MaxJ_VertexSet"]:
     temperatureField.data[index] = TS
+
+
 
 
 # #Particles
@@ -921,10 +927,10 @@ step = 0
 timevals = [0.]
 steps_end = 5
 steps_display_info = 20
-swarm_update = np.floor(10.*RES/64)
+swarm_update = 10.
 files_output = 200
 gldbs_output = 1e5
-checkpoint_every = 10000
+checkpoint_every = 1e6
 metric_output = np.floor(10.*RES/64)
 
 
