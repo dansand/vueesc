@@ -1,7 +1,0 @@
-MachineTime,6.889819,res96.000000MachineTime,6.924043,res96.000000MachineTime,7.034648,res96.000000MachineTime,6.981091,res96.000000
-
-MachineTime,7.013268,res96.000000
-MachineTime,6.974902,res96.000000
-MachineTime,7.064880,res96.000000
-MachineTime,6.928929,res96.000000
-MachineTime,7.008128,res,96

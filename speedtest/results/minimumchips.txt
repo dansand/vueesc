@@ -1,5 +1,0 @@
-MachineTime,5.373954,res,64
-MachineTime,5.388559,res,64
-
-MachineTime,5.430367,res,64
-MachineTime,12.136012,res,96
