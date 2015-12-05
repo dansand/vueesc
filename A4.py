@@ -141,7 +141,7 @@ else:
 
 # In[614]:
 
-outputPath = str(Model) + "/" + str(ModNum) + "/"
+outputPath = "results" + "/" + str(Model) + "/" + str(ModNum) + "/"
 imagePath = outputPath + 'images/'
 filePath = outputPath + 'files/'
 checkpointPath = outputPath + 'checkpoint/'
