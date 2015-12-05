@@ -1122,8 +1122,8 @@ start = time.clock()
 # setup summary output file (name above)
 f_o = open(outputPath+outputFile, 'w')
 # Perform steps
-#while realtime < 0.4:
-while step < 1:
+while realtime < 0.4:
+#while step < 1:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
@@ -1256,14 +1256,14 @@ f_o.close()
 # In[68]:
 
 
-fig3 = glucifer.Figure()
-velmagfield = uw.function.math.sqrt( uw.function.math.dot(velocityField,velocityField) )
-fig3 + glucifer.objects.VectorArrows( elementMesh, velocityField, arrowHead=0.3, scaling=0.00005, glyphs=3, )
-fig3 + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red')
-fig3 + glucifer.objects.Surface(elementMesh, temperatureField)
-fig3 + glucifer.objects.Mesh(linearMesh)
-fig3.show()
-fig3.save_database('test.gldb')
+#fig3 = glucifer.Figure()
+#velmagfield = uw.function.math.sqrt( uw.function.math.dot(velocityField,velocityField) )
+#fig3 + glucifer.objects.VectorArrows( elementMesh, velocityField, arrowHead=0.3, scaling=0.00005, glyphs=3, )
+#fig3 + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red')
+#fig3 + glucifer.objects.Surface(elementMesh, temperatureField)
+#fig3 + glucifer.objects.Mesh(linearMesh)
+#fig3.show()
+#fig3.save_database('test.gldb')
 
 
 
