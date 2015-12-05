@@ -125,7 +125,7 @@ else:
 
 # In[8]:
 
-outputPath = str(Model) + "/" + str(ModNum) + "/"
+outputPath = "results" + "/" + str(Model) + "/" + str(ModNum) + "/"
 imagePath = outputPath + 'images/'
 filePath = outputPath + 'files/'
 checkpointPath = outputPath + 'checkpoint/'
@@ -1050,8 +1050,8 @@ while realtime < 0.40:
         islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
         lithIntVar.data[islith] = 1.
         #Also print some info at this step increment
-        print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
-          .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
+        #print('steps = {0:6d}; time = {1:.3e}; v_rms = {2:.3f}; Nu0 = {3:.3f}; Nu1 = {3:.3f}'
+        #  .format(step, realtime, Rms, float(Nu0glob), float(Nu1glob)))
 
 f_o.close()
 #checkpoint(step, checkpointPath)
