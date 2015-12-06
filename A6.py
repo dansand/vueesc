@@ -52,7 +52,7 @@ rank = comm.Get_rank()
 #Need to manually set these two
 ############
 Model = "A"
-ModNum = 5
+ModNum = 6
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -308,100 +308,33 @@ for index, coord in enumerate(linearMesh.data):
 #ModIt = "128"
 
 
-# In[20]:
-
-########################################
-#No sticky air, square models
-########################################
-
-if (loadTemp == True) and (refineMesh == False) and (squareModel == True) and (stickyAir == False):
-    if ModIt == str(96):
-        temperatureField.load('temp_ics/1.0_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField.load('temp_ics/1.0_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField.load('temp_ics/1.0_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField.load('temp_ics/1.0_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField.load('temp_ics/1.0_256_init_temp.hdf5')
-elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (stickyAir == False):
-    if ModIt == str(96):
-        temperatureField.load('temp_ics/r11_1.0_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField.load('temp_ics/r11_1.0_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField.load('temp_ics/r11_1.0_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField.load('temp_ics/r11_1.0_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField.load('temp_ics/r11_1.0_256_init_temp.hdf5')
-
-
-# In[21]:
-
-########################################
-#Sticky air, square models
-########################################
-if (loadTemp == True) and (refineMesh == False) and (squareModel == True) and (stickyAir == True):
-    print "True"
-    if ModIt == str(96):
-        temperatureField.load('temp_ics/sqa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField.load('temp_ics/sqa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField.load('temp_ics/sqa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField.load('temp_ics/sqa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField.load('temp_ics/sqa_256_init_temp.hdf5')
-elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (stickyAir == True):
-    print "True"
-    if ModIt == str(96):
-        temperatureField.load('temp_ics/r11_sqa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField.load('temp_ics/r11_sqa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField.load('temp_ics/r11_sqa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField.load('temp_ics/r11_sqa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField.load('temp_ics/r11_sqa_256_init_temp.hdf5')
-
-
-# In[22]:
-
-
-
-# In[23]:
-
 ########################################
 #Sticky air, rectangular models
 ########################################
 
 if (loadTemp == True) and (refineMesh == False) and (squareModel == False) and (stickyAir == True):
     print "True"
-    if ModIt == str(96):
+    if RES == 96:
         temperatureField.load('temp_ics/sa_96_init_temp.hdf5')
-    elif ModIt == str(128):
+    elif RES == 128:
         temperatureField.load('temp_ics/sa_128_init_temp.hdf5')
-    elif ModIt == str(144):
+    elif RES == 144:
         temperatureField.load('temp_ics/sa_144_init_temp.hdf5')
-    elif ModIt == str(192):
+    elif RES == 192:
         temperatureField.load('temp_ics/sa_192_init_temp.hdf5')
-    elif ModIt == str(256):
+    elif RES == 256:
         temperatureField.load('temp_ics/sa_256_init_temp.hdf5')
 elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and (stickyAir == True):
     print "True"
-    if ModIt == str(96):
+    if RES == 96:
         temperatureField.load('temp_ics/r11_sa_96_init_temp.hdf5')
-    elif ModIt == str(128):
+    elif RES == 128:
         temperatureField.load('temp_ics/r11_sa_128_init_temp.hdf5')
-    elif ModIt == str(144):
+    elif RES == 144:
         temperatureField.load('temp_ics/r11_sa_144_init_temp.hdf5')
-    elif ModIt == str(192):
+    elif RES == 192:
         temperatureField.load('temp_ics/r11_sa_192_init_temp.hdf5')
-    elif ModIt == str(256):
+    elif RES == 256:
         temperatureField.load('temp_ics/r11_sa_256_init_temp.hdf5')
 
 
