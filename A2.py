@@ -1138,8 +1138,8 @@ steps_end = 5
 steps_display_info = 20
 swarm_update = 10
 swarm_repop = 100
-files_output = 400
-gldbs_output = 1e5
+files_output = 250
+gldbs_output = 1e6
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
@@ -1266,7 +1266,7 @@ while realtime < 0.4:
         pics.repopulate()
 
 f_o.close()
-checkpoint(step, checkpointPath)
+#checkpoint(step, checkpointPath)
 
 
 # In[58]:

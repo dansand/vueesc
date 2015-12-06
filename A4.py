@@ -1133,7 +1133,7 @@ steps_display_info = 20
 swarm_update = 10
 swarm_repop = 100
 files_output = 250
-gldbs_output = 1e5
+gldbs_output = 1e6
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
