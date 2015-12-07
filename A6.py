@@ -423,7 +423,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
 
 tempNump = temperatureField.data
 for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (0.05*np.random.rand(1)[0])
+    pertCoeff = math.sin(math.pi*coord[1])*(0.05*np.random.rand(1)[0])
     ict = tempNump[index]
     tempNump[index] = ict + pertCoeff
 

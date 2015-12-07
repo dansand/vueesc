@@ -73,7 +73,7 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
-loadTemp = True
+loadTemp = False
 refineMesh = True
 
 
@@ -490,7 +490,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
 
 tempNump = temperatureField.data
 for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (0.05*np.random.rand(1)[0])
+    pertCoeff = math.sin(math.pi*coord[1])*(0.05*np.random.rand(1)[0])
     ict = tempNump[index]
     tempNump[index] = ict + pertCoeff
 
@@ -1133,11 +1133,11 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-viscVariable = gSwarm.add_variable( dataType="float", count=1 )
-viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-figEta = glucifer.Figure()
-figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
-figEta + glucifer.objects.Points(gSwarm,viscVariable)
+#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+#figEta = glucifer.Figure()
+#figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+#figEta + glucifer.objects.Points(gSwarm,viscVariable)
 
 
 
