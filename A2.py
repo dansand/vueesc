@@ -73,7 +73,7 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
-loadTemp = False
+loadTemp = True
 refineMesh = True
 
 
@@ -1114,11 +1114,16 @@ stressField.data[:] = stressinv
 
 ##Gldbs:
 
-#viscVariable = gSwarm.add_variable( dataType="float", count=1 )
-#viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
-#figEta = plt.Figure()
-#figEta.Points(gSwarm,viscVariable)
-#figEta.Points(gSwarm,materialVariable, colours='brown white red blue')
+viscVariable = gSwarm.add_variable( dataType="float", count=1 )
+viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
+
+figEta = glucifer.Figure()
+#figEta + glucifer.objects.Points(gSwarm,materialVariable, colours='brown white red blue')
+figEta + glucifer.objects.Surface(elementMesh, srtdata)
+figEta + glucifer.objects.Surface(elementMesh, temperatureField)
+figEta + glucifer.objects.Points(gSwarm,viscVariable)
+
+figEta.show()
 
 
 # Main simulation loop
@@ -1139,7 +1144,7 @@ steps_display_info = 20
 swarm_update = 10
 swarm_repop = 100
 files_output = 250
-gldbs_output = 1e6
+gldbs_output = 10
 checkpoint_every = 10000
 metric_output = np.floor(10.*RES/64)
 
