@@ -53,7 +53,7 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "T"
+Model = "A"
 ModNum = 6
 
 if len(sys.argv) == 1:
@@ -101,7 +101,7 @@ TB  = 1          # bottom boundary temperature (melting point)
 ETA_T = 1e5
 ETA_Y = 10
 ETA0 = 1e-3*newvisc
-YSTRESS = 1.*newvisc
+YSTRESS = 10.*newvisc
 D = 2890.
 
 MINX = 0.
