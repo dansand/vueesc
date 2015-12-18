@@ -1230,7 +1230,7 @@ swarm_repop = 100
 files_output = 200
 gldbs_output = 1e6
 checkpoint_every = 200
-metric_output = 1
+metric_output = 10
 
 
 # In[ ]:
