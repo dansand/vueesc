@@ -129,7 +129,7 @@ else:
 
 #Watch the type assignemnt on sys.argv[1]
 
-DEFAULT = 128
+DEFAULT = 96
 ModIt   = str(DEFAULT)
 
 
@@ -1024,7 +1024,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               pressureField=pressureField,
                               conditions=[freeslipBC,],
                               viscosityFn=fn.exception.SafeMaths(viscosityMapFn),
-                              bodyForceFn=buoyancyFn, swarm = gSwarm)
+                              bodyForceFn=buoyancyFn)
 
 
 # solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
@@ -1217,6 +1217,9 @@ figStrainRate + glucifer.objects.Surface(elementMesh, secinv, logScale=True)
 figVelocityMag = glucifer.Figure(figsize=(1024,384))
 figVelocityMag + glucifer.objects.Surface(elementMesh, fn.math.dot(velocityField,velocityField))
 
+figTemp = glucifer.Figure(figsize=(1024,384))
+figTemp + glucifer.objects.Surface(elementMesh, temperatureField)
+
 
 # Main simulation loop
 # =======
@@ -1234,11 +1237,11 @@ pics = uw.swarm.PICIntegrationSwarm(gSwarm)
 steps_end = 5
 steps_display_info = 20
 swarm_update = 10
-swarm_repop = 100
-files_output = 200
+swarm_repop = 50
+files_output = 400
 gldbs_output = 1e6
-images_output = 200
-checkpoint_every = 200
+images_output = 20
+checkpoint_every = 100
 metric_output = 1
 
 
@@ -1381,6 +1384,8 @@ while realtime < 0.4:
         fullpath3 = os.path.join(outputPath + "images/" + iname3)
         iname4 = "v2Fig" + "_" + str(ModIt) + "_" + str(step) + ".png"
         fullpath4 = os.path.join(outputPath + "images/" + iname4)
+        iname5 = "tempFig" + "_" + str(ModIt) + "_" + str(step) + ".png"
+        fullpath5 = os.path.join(outputPath + "images/" + iname5)
         #
         figEta.show()
         figEta.save_image(fullpath1)
@@ -1390,6 +1395,8 @@ while realtime < 0.4:
         figStrainRate.save_image(fullpath3)
         figVelocityMag.show()
         figVelocityMag.save_image(fullpath4)
+        figTemp.show()
+        figTemp.save_image(fullpath5)
 
     ################
     #Particle update
@@ -1453,17 +1460,30 @@ figMat + glucifer.objects.Mesh(linearMesh)
 
 
 
-# In[119]:
+# In[148]:
+
+figTemp = glucifer.Figure(figsize=(1024,384))
+figTemp + glucifer.objects.Surface(elementMesh, temperatureField)
+figTemp.show()
+
+
+# In[146]:
 
 figStrainRate = glucifer.Figure(figsize=(1024,384))
-figStrainRate + glucifer.objects.Surface(elementMesh, secinv, logScale=True)
+figStrainRate + glucifer.objects.Surface(elementMesh, secinvCopy, logScale=True)
 figStrainRate.show()
 
 
-# In[121]:
+# In[138]:
+
+get_ipython().magic(u'pinfo glucifer.objects.VectorArrows')
+
+
+# In[143]:
 
 figVelocityMag = glucifer.Figure(figsize=(1024,384))
 figVelocityMag + glucifer.objects.Surface(elementMesh, fn.math.dot(velocityField,velocityField))
+figVelocityMag + glucifer.objects.VectorArrows(elementMesh,velocityField, arrowHead=0.2, scaling=0.0001)
 figVelocityMag.show()
 
 
