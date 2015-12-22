@@ -1008,8 +1008,8 @@ stokesPIC = uw.systems.Stokes(velocityField=velocityField,
 
 # In[89]:
 
-stokesPIC.solve()
-
+if not checkpointLoad:
+    stokesPIC.solve()
 
 # In[90]:
 
@@ -1216,6 +1216,8 @@ figStrainRate + glucifer.objects.Surface(elementMesh, secinv, logScale=True)
 
 figVelocityMag = glucifer.Figure(figsize=(1024,384))
 figVelocityMag + glucifer.objects.Surface(elementMesh, fn.math.dot(velocityField,velocityField))
+figVelocityMag + glucifer.objects.VectorArrows(elementMesh,velocityField, arrowHead=0.2, scaling=0.0001)
+
 
 figTemp = glucifer.Figure(figsize=(1024,384))
 figTemp + glucifer.objects.Surface(elementMesh, temperatureField)
