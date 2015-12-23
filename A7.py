@@ -82,8 +82,14 @@ refineMesh = True
 # In[6]:
 
 ETA_T = 1e5
-newvisc= math.exp(math.log(ETA_T)*0.53)
 
+RADesired = 1e6
+newvisc= math.exp(math.log(ETA_T)*0.53)
+RA  = 1e2*newvisc
+#Weird hack for now
+extraRA = RADesired/RA
+newvisc = newvisc*extraRA
+RA = RADesired
 
 # In[7]:
 
@@ -1245,8 +1251,8 @@ steps_display_info = 20
 swarm_update = 10
 swarm_repop = 50
 files_output = 200
-gldbs_output = 200
-images_output = 2
+gldbs_output = 100
+images_output = 20
 checkpoint_every = 200
 metric_output = 1
 
