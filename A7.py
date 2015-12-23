@@ -630,6 +630,10 @@ else:
                  materialVariable.data[particleID] = crustIndex
 
 
+for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
+    if (abs(gSwarm.particleCoordinates.data[particleID][0]) < CrustM) and (gSwarm.particleCoordinates.data[particleID][1] < 1.0):
+        materialVariable.data[particleID] = crustIndex
+
 # #Material Graphs
 
 # In[35]:
