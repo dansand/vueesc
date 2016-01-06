@@ -83,7 +83,7 @@ refineMesh = True
 
 ETA_T = 1e5
 
-RADesired = 1e6
+RADesired = 1e7
 newvisc= math.exp(math.log(ETA_T)*0.53)
 RA  = 1e2*newvisc
 #Weird hack for now
@@ -107,7 +107,7 @@ TB  = 1          # bottom boundary temperature (melting point)
 ETA_T = 1e5
 ETA_Y = 10
 ETA0 = 1e-3*newvisc
-YSTRESS = 1.*newvisc
+YSTRESS = 7.*newvisc
 D = 2890.
 
 MINX = -1.
@@ -520,16 +520,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
                                               nodeIndexSets=(JWalls,) )
 
 
-# ##Add Random 125 K temp perturbation
-#
 
-# In[29]:
-
-tempNump = temperatureField.data
-for index, coord in enumerate(linearMesh.data):
-    pertCoeff = (0.05*np.random.rand(1)[0])
-    ict = tempNump[index]
-    tempNump[index] = ict + pertCoeff
 
 
 # ##Reset bottom Dirichlet conds.
@@ -630,9 +621,21 @@ else:
                  materialVariable.data[particleID] = crustIndex
 
 
-for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
-    if (abs(gSwarm.particleCoordinates.data[particleID][0]) < CrustM) and (gSwarm.particleCoordinates.data[particleID][1] < 1.0):
-        materialVariable.data[particleID] = crustIndex
+# ##Add Random 125 K temp perturbation
+#
+
+# In[29]:
+
+tempNump = temperatureField.data
+for index, coord in enumerate(linearMesh.data):
+    pertCoeff = (0.05*np.random.rand(1)[0])
+    ict = tempNump[index]
+    tempNump[index] = ict + pertCoeff
+
+
+#for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
+#    if (abs(gSwarm.particleCoordinates.data[particleID][0]) < CrustM) and (gSwarm.particleCoordinates.data[particleID][1] < 1.0):
+#        materialVariable.data[particleID] = crustIndex
 
 # #Material Graphs
 
@@ -679,7 +682,7 @@ DG[2][3]['depthcondition'] = -1*dz
 #Anything to mantle
 DG.add_edges_from([(2,0), (3,0), (1,0)])
 DG[3][0]['depthcondition'] = dz
-DG[2][0]['depthcondition'] = (300./D)
+DG[2][0]['depthcondition'] = (660./D)
 DG[1][0]['depthcondition'] = (660./D) #This means we're going to kill lithosphere at the 660.
 
 
@@ -966,7 +969,7 @@ airdensity = RA*CompRAfact
 
 ##This block sets up rheolgoy for models with crust rheology;
 
-viscreduct = 0.1
+viscreduct = 0.01
 
 #Von Mises effective viscosity
 crustviscosityp = viscreduct*ETA0 + ((viscreduct*YSTRESS)/(secinvCopy/math.sqrt(0.5))) #extra factor to account for underworld second invariant form
@@ -1050,13 +1053,13 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
 
 # In[86]:
 
+
+
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
-
-
 solver.options.main.Q22_pc_type='uw'
-solver.options.A11.ksp_rtol=1e-7
-solver.options.scr.ksp_rtol=1e-6
+solver.options.A11.ksp_rtol=10**(-6.5)
+solver.options.scr.ksp_rtol=10**(-5.5)
 solver.options.scr.use_previous_guess = True
 solver.options.scr.ksp_set_min_it_converge = 6
 
@@ -1257,7 +1260,7 @@ swarm_repop = 50
 files_output = 200
 gldbs_output = 100
 images_output = 20
-checkpoint_every = 200
+checkpoint_every = 2
 metric_output = 1
 
 
@@ -1306,7 +1309,9 @@ def checkpoint2(step, checkpointPath, swarm, filename, varlist = [materialVariab
 start = time.clock()
 # setup summary output file (name above)
 if checkpointLoad:
-    shutil.copyfile(os.path.join(checkpointLoadDir, outputFile), outputPath+outputFile)
+    if uw.rank == 0:
+        shutil.copyfile(os.path.join(checkpointLoadDir, outputFile), outputPath+outputFile)
+    comm.Barrier()
     #os.rename(os.path.join(checkpointLoadDir, outputFile), outputPath+outputFile)
     f_o = open(os.path.join(outputPath, outputFile), 'a')
     prevdata = np.genfromtxt(os.path.join(outputPath, outputFile), skip_header=0, skip_footer=0)
@@ -1319,8 +1324,8 @@ else:
     step = 0
     timevals = [0.]
 # Perform steps
-while realtime < 0.4:
-#while step < 10:
+#while realtime < 0.4:
+while step < 10:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
