@@ -1417,16 +1417,16 @@ while realtime < 0.4:
         iname5 = "tempFig" + "_" + str(ModIt) + "_" + str(step) + ".png"
         fullpath5 = os.path.join(outputPath + "images/" + iname5)
         #
-        figEta.show()
-        figEta.save_image(fullpath1)
-        figMat.show()
-        figMat.save_image(fullpath2)
-        figStrainRate.show()
-        figStrainRate.save_image(fullpath3)
-        figVelocityMag.show()
-        figVelocityMag.save_image(fullpath4)
-        figTemp.show()
-        figTemp.save_image(fullpath5)
+        #figEta.show()
+        #figEta.save_image(fullpath1)
+        #figMat.show()
+        #figMat.save_image(fullpath2)
+        #figStrainRate.show()
+        #figStrainRate.save_image(fullpath3)
+        #figVelocityMag.show()
+        #figVelocityMag.save_image(fullpath4)
+        #figTemp.show()
+        #figTemp.save_image(fullpath5)
 
     ################
     #Particle update
