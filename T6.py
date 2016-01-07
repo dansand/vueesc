@@ -53,8 +53,8 @@ rank = comm.Get_rank()
 ############
 #Need to manually set these two
 ############
-Model = "A"
-ModNum = 5
+Model = "T"
+ModNum = 6
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -75,7 +75,7 @@ else:
 
 #Do you want to write hdf5 files - Temp, RMS, viscosity, stress?
 writeFiles = True
-loadTemp = False
+loadTemp = True
 refineMesh = True
 
 
@@ -145,7 +145,7 @@ else:
 
 # In[10]:
 
-outputPath = "results" + "/" +  str(Model) + "/" + str(ModNum) + "/" + str(ModIt) + "/"
+outputPath = "results" + "/" +  str(Model) + "/" + str(ModNum) + "/"
 imagePath = outputPath + 'images/'
 filePath = outputPath + 'files/'
 checkpointPath = outputPath + 'checkpoint/'
@@ -1263,7 +1263,7 @@ steps_display_info = 20
 swarm_update = 10
 swarm_repop = 50
 files_output = 250
-gldbs_output = 500
+gldbs_output = 5
 images_output = 250
 checkpoint_every = 250
 metric_output = 1
