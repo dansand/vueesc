@@ -1314,7 +1314,7 @@ def checkpoint2(step, checkpointPath, swarm, filename, varlist = [materialVariab
 start = time.clock()
 # setup summary output file (name above)
 if checkpointLoad:
-    if uw.rank == 0:
+    if uw.rank() == 0:
         shutil.copyfile(os.path.join(checkpointLoadDir, outputFile), outputPath+outputFile)
     comm.Barrier()
     #os.rename(os.path.join(checkpointLoadDir, outputFile), outputPath+outputFile)
