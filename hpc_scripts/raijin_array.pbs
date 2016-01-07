@@ -19,4 +19,4 @@ PATH=MPI_DIR/bin:$PATH
 PYTHONPATH=/home/565/jug565/.local/lib/python2.7/site-packages
 export PYTHONPATH=$PYTHONPATH:/short/m18/jug565/underworld2_clean
 
-/short/m18/jug565/opt/openmpi-1.8.8/bin/mpirun -np 64 python R4.py $PBS_ARRAY_INDEX
+/short/m18/jug565/opt/openmpi-1.8.8/bin/mpirun -np 64 python A5.py $PBS_ARRAY_INDEX
