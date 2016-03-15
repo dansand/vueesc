@@ -24,13 +24,13 @@
 
 # Load python functions needed for underworld. Some additional python functions from os, math and numpy used later on.
 
-# In[2]:
+# In[1]:
 
 #!pip install natsort
 #!pip install networkx
 
 
-# In[3]:
+# In[2]:
 
 import networkx as nx
 import underworld as uw
@@ -52,7 +52,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 
-# In[4]:
+# In[3]:
 
 #Display working directory info if in nb mode
 if (len(sys.argv) > 1):
@@ -60,13 +60,13 @@ if (len(sys.argv) > 1):
         get_ipython().system(u'pwd && ls')
 
 
-# In[5]:
+# In[4]:
 
 ############
 #Model name.  
 ############
-Model = "A"
-ModNum = 7
+Model = "T"
+ModNum = 0
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -76,7 +76,7 @@ else:
     ModIt = str(sys.argv[1])
 
 
-# In[6]:
+# In[5]:
 
 ###########
 #Standard output directory setup
@@ -106,7 +106,7 @@ if uw.rank()==0:
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
 
 
-# In[7]:
+# In[6]:
 
 ###########
 #Check if starting from checkpoint
@@ -126,7 +126,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 
 # Set physical constants and parameters, including the Rayleigh number (*RA*). 
 
-# In[8]:
+# In[7]:
 
 ###########
 #Physical parameters
@@ -182,7 +182,7 @@ dT = dp.deltaT
 #YSTRESS = nondim.cohesion
 
 #A few paramters defining lengths scales, affects materal transistions etc.
-MANTLETOCRUST = (27.*1e3)/D #Crust depth
+MANTLETOCRUST = (18.*1e3)/D #Crust depth
 CRUSTTOMANTLE = (300.*1e3)/D
 LITHTOMANTLE = (660.*1e3)/D
 MANTLETOLITH = (200.*1e3)/D
@@ -213,7 +213,7 @@ else:
     ndp.cohesion = float(sys.argv[1])*newvisc
 
 
-# In[9]:
+# In[8]:
 
 ###########
 #Model setup parameters
@@ -263,7 +263,7 @@ ALPHA = 11. #Mesh refinement parameter
 PIC_integration=False
 
 
-# In[10]:
+# In[9]:
 
 ###########
 #Model Runtime parameters
@@ -285,7 +285,7 @@ assert (metric_output >= swarm_update), 'Swarm update is needed before checkpoin
 assert metric_output >= sticky_air_temp, 'Sticky air temp should be updated more frequently that metrics'
 
 
-# In[11]:
+# In[10]:
 
 ###########
 #Model output parameters
@@ -298,7 +298,7 @@ loadTemp = True
     
 
 
-# In[12]:
+# In[11]:
 
 mesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
                                  elementRes  = (Xres, Yres), 
@@ -313,7 +313,7 @@ temperatureField    = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 temperatureDotField = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 
 
-# In[13]:
+# In[12]:
 
 Xres, MINX, periodic, elementType
 
@@ -324,7 +324,7 @@ Xres, MINX, periodic, elementType
 
 # ##Refine mesh
 
-# In[14]:
+# In[13]:
 
 if refineMesh:
     alpha=ALPHA
@@ -397,7 +397,7 @@ if refineMesh:
 #         elementMesh.data[:,1] = newys
 #         elementMesh.data[:,0] = newxs
 
-# In[15]:
+# In[14]:
 
 #meshfig = glucifer.Figure(figsize=(800,400))
 #meshfig.append( glucifer.objects.Mesh(elementMesh) )
@@ -407,7 +407,7 @@ if refineMesh:
 
 # #ICs and BCs
 
-# In[16]:
+# In[15]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
@@ -426,7 +426,7 @@ for index, coord in enumerate(mesh.data):
         tempNump[index] = 0.
 
 
-# In[17]:
+# In[16]:
 
 
 #For notebook runs
@@ -443,7 +443,7 @@ for index, coord in enumerate(mesh.data):
 
 
 
-# In[18]:
+# In[17]:
 
 ########################################
 #No sticky air, square models
@@ -475,7 +475,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (
         temperatureField._oldload('temp_ics/r11_1.0_256_init_temp.hdf5') 
 
 
-# In[19]:
+# In[18]:
 
 ########################################
 #Sticky air, square models
@@ -506,7 +506,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (
         temperatureField._oldload('temp_ics/r11_sqa_256_init_temp.hdf5') 
 
 
-# In[20]:
+# In[19]:
 
 ########################################
 #Sticky air, rectangular models
@@ -573,7 +573,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and 
 
 
 
-# In[21]:
+# In[20]:
 
 #icfnam= "R(11)_" + "2_" + str(RES) + "_init_temp.hdf5"
 #icpath = "temp_ics/" + icfnam 
@@ -583,7 +583,7 @@ elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and 
 #icpath
 
 
-# In[22]:
+# In[21]:
 
 # Get the actual sets 
 #
@@ -608,7 +608,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 
 
 
-# In[23]:
+# In[22]:
 
 # Now setup the dirichlet boundary condition
 # Note that through this object, we are flagging to the system 
@@ -625,7 +625,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
 # ##Add Random 125 K temp perturbation
 # 
 
-# In[24]:
+# In[23]:
 
 tempNump = temperatureField.data
 
@@ -640,7 +640,7 @@ if not checkpointLoad:
 
 # ##Reset bottom Dirichlet conds.
 
-# In[25]:
+# In[24]:
 
 # Set temp boundaries 
 # on the boundaries
@@ -650,7 +650,7 @@ for index in mesh.specialSets["MaxJ_VertexSet"]:
     temperatureField.data[index] = ndp.TS
 
 
-# In[26]:
+# In[25]:
 
 checkdirs
 
@@ -662,7 +662,7 @@ checkdirs
 
 # # Particles
 
-# In[27]:
+# In[26]:
 
 ###########
 #Material Swarm and variables
@@ -678,7 +678,7 @@ varlist = [materialVariable, rockIntVar, airIntVar, lithIntVar]
 varnames = ['materialVariable', 'rockIntVar', 'airIntVar', 'lithIntVar']
 
 
-# In[28]:
+# In[27]:
 
 ###########
 #Swarms for surface intragrals when using Sticky air
@@ -703,7 +703,7 @@ dumout = baseintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
 # #Initialise swarm variables, or Swarm checkpoint load
 
-# In[29]:
+# In[28]:
 
 mantleIndex = 0
 lithosphereIndex = 1
@@ -748,7 +748,7 @@ else:
 
 # #Material Graphs
 
-# In[30]:
+# In[29]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -756,12 +756,12 @@ else:
 material_list = [0,1,2,3]
 
 
-# In[31]:
+# In[30]:
 
 print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.data[:])))
 
 
-# In[32]:
+# In[31]:
 
 
 
@@ -811,12 +811,12 @@ DG[0][2]['depthcondition'] = MANTLETOCRUST
 DG[1][2]['depthcondition'] = MANTLETOCRUST
 
 
-# In[33]:
+# In[32]:
 
 DG.nodes()
 
 
-# In[34]:
+# In[33]:
 
 remove_nodes = []
 for node in DG.nodes():
@@ -827,12 +827,12 @@ for rmnode in remove_nodes:
     DG.remove_node(rmnode)
 
 
-# In[35]:
+# In[34]:
 
 DG.nodes()
 
 
-# In[36]:
+# In[35]:
 
 #A Dictionary to map strings in the graph (e.g. 'depthcondition') to particle data arrays
 
@@ -847,7 +847,7 @@ conditionmap['avgtempcondition'] = {}
 conditionmap['avgtempcondition']['data'] = particletemps
 
 
-# In[37]:
+# In[36]:
 
 def update_swarm(graph, particleIndex):
     """
@@ -896,7 +896,7 @@ def update_swarm(graph, particleIndex):
         return innerchange
 
 
-# In[38]:
+# In[37]:
 
 #Cleanse the swarm of its sins
 #For some Material Graphs, the graph may have to be treaversed more than once
@@ -915,7 +915,7 @@ while number_updated != 0:
 
 # ##Set the values for the masking swarms
 
-# In[39]:
+# In[38]:
 
 #Setup up a masking Swarm variable for the integrations.
 #These should be rebuilt at same frequency as the metric calcualtions
@@ -936,7 +936,7 @@ lithIntVar.data[islith] = 1.
 # #Material properties
 # 
 
-# In[40]:
+# In[39]:
 
 #Make variables required for plasticity
 
@@ -953,7 +953,7 @@ depthField.data[:] = depth.evaluate(mesh)
 depthField.data[np.where(depthField.data[:] < 0.)[0]] = 0.
 
 
-# In[41]:
+# In[40]:
 
 ##Basic mantle viscosity Functions
 viscosityl2 = newvisc*fn.math.exp((math.log(ndp.etaT)*-1*temperatureField) + (depthField*math.log(ndp.etaY)))
@@ -976,7 +976,7 @@ crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 # 
 # Here the functions for density, viscosity etc. are set. These functions and/or values are preserved for the entire simulation time. 
 
-# In[42]:
+# In[41]:
 
 # Here we set a viscosity value of '1.' for both materials
 viscosityMapFn = fn.branching.map( fn_key = materialVariable,
@@ -1002,7 +1002,7 @@ buoyancyFn = gravity*densityMapFn
 # 
 # Setup linear Stokes system to get the initial velocity.
 
-# In[43]:
+# In[42]:
 
 #We first set up a l
 stokesPIC = uw.systems.Stokes(velocityField=velocityField, 
@@ -1015,25 +1015,25 @@ stokesPIC = uw.systems.Stokes(velocityField=velocityField,
 
 # We do one solve with linear viscosity to get the initial strain rate invariant. This solve step also calculates a 'guess' of the the velocity field based on the linear system, which is used later in the non-linear solver.
 
-# In[44]:
+# In[43]:
 
 checkpointLoad
 
 
-# In[45]:
+# In[44]:
 
 if not checkpointLoad:
     solver = uw.systems.Solver(stokesPIC)
     solver.solve() 
 
 
-# In[46]:
+# In[45]:
 
 #Switch particle escape on, this will also trigger the inflow population control 
 gSwarm.particleEscape = True
 
 
-# In[47]:
+# In[46]:
 
 # Setup the Stokes system again, now with linear or nonlinear visocity viscosity.
 
@@ -1049,7 +1049,7 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               fn_bodyforce=buoyancyFn, swarm = swarm)
 
 
-# In[48]:
+# In[47]:
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
@@ -1072,7 +1072,7 @@ solver.options.mg.levels = 3
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
 # 
 
-# In[49]:
+# In[48]:
 
 solver.solve(nonLinearIterate=True)
 
@@ -1082,7 +1082,7 @@ solver.solve(nonLinearIterate=True)
 # 
 # Setup the system in underworld by flagging the temperature and velocity field variables.
 
-# In[50]:
+# In[49]:
 
 #Create advdiff system
 
@@ -1117,7 +1117,7 @@ advector = uw.systems.SwarmAdvector( swarm         = gSwarm,
 # 
 # $$ \delta = \frac{\lvert \langle W \rangle - \frac{\langle \Phi \rangle}{Ra} \rvert}{max \left(  \langle W \rangle,  \frac{\langle \Phi \rangle}{Ra}\right)} \times 100% $$
 
-# In[51]:
+# In[50]:
 
 #Setup some Integrals. We want these outside the main loop...
 tempVariable = gSwarm.add_variable( dataType="double", count=1 )
@@ -1134,14 +1134,16 @@ dwint = uw.utils.Integral(temperatureField*velocityField[1]*rockIntVar, mesh)
 
 
 sinner = fn.math.dot(strainRate_2ndInvariant,strainRate_2ndInvariant)
-vdint = uw.utils.Integral((4.*viscosityFn2*sinner)*rockIntVar, mesh)
-vdintair = uw.utils.Integral((4.*viscosityFn2*sinner)*airIntVar, mesh)
-vdintlith = uw.utils.Integral((4.*viscosityFn2*sinner)*lithIntVar, mesh)
+vdint = uw.utils.Integral((4.*viscosityMapFn*sinner)*rockIntVar, mesh)
+vdintair = uw.utils.Integral((4.*viscosityMapFn*sinner)*airIntVar, mesh)
+vdintlith = uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh)
 
 
 # In[52]:
 
-v2int.evaluate()
+#These should be the same in this model - no weak crust
+print(uw.utils.Integral((4.*viscosityFn2*sinner)*rockIntVar, mesh).evaluate()[0])
+print(uw.utils.Integral((4.*viscosityMapFn*sinner)*rockIntVar, mesh).evaluate()[0])
 
 
 # \begin{equation}  \langle T \rangle  = \int^1_0 \int^1_0 T \, dxdy \end{equation}
@@ -1497,7 +1499,7 @@ while realtime < 0.5:
         Viscdis = viscdis(vdint)
         Viscdisair = viscdis(vdintair)
         Viscdislith = viscdis(vdintlith)
-        etamax, etamin = visc_extr(viscosityFn2)
+        etamax, etamin = visc_extr(viscosityMapFn)
         #These are the ones that need mpi4py treatment
         Nu0loc = nusselt(temperatureField, baseintswarm, dx)
         Nu1loc = nusselt(temperatureField, surfintswarm, dx)
