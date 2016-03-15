@@ -1214,7 +1214,7 @@ while realtime < 0.05:
         Viscdis = viscdis(vdint)
         Viscdisair = viscdis(vdintair)
         Viscdislith = viscdis(vdintlith)
-        visc_extr(viscosityMapFn)
+        etamax, etamin = visc_extr(viscosityMapFn)
         #These are the ones that need mpi4py treatment
         Nu0loc = nusselt(temperatureField, baseintswarm, dx)
         Nu1loc = nusselt(temperatureField, surfintswarm, dx)
