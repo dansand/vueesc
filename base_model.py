@@ -1056,17 +1056,17 @@ solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
 
 #Set more advanced solver option
-solver.options.main.Q22_pc_type='uw'
-solver.options.A11.ksp_rtol=1e-5
-solver.options.scr.ksp_rtol=1e-5
+#solver.options.main.Q22_pc_type='uw'
+#solver.options.A11.ksp_rtol=1e-5
+#solver.options.scr.ksp_rtol=1e-5
 #solver.options.A11.ksp_type="cg"
-solver.options.scr.use_previous_guess = True
-solver.options.scr.ksp_set_min_it_converge = 1
+#solver.options.scr.use_previous_guess = True
+#solver.options.scr.ksp_set_min_it_converge = 1
 
-solver.options.mg.levels = 3
+#solver.options.mg.levels = 3
 
-#solver.options.A11.ksp_monitor=''
-#solver.options.A11.ksp_converged_reason='
+solver.options.A11.ksp_monitor=''
+solver.options.A11.ksp_converged_reason=''
 
 
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration

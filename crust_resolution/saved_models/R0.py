@@ -24,13 +24,13 @@
 
 # Load python functions needed for underworld. Some additional python functions from os, math and numpy used later on.
 
-# In[44]:
+# In[99]:
 
 #!pip install natsort
 #!pip install networkx
 
 
-# In[45]:
+# In[100]:
 
 import networkx as nx
 import underworld as uw
@@ -45,8 +45,6 @@ import sys
 import natsort
 import shutil
 from easydict import EasyDict as edict
-import slippy2 as sp
-
 
 
 from mpi4py import MPI
@@ -54,7 +52,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 
-# In[46]:
+# In[101]:
 
 #Display working directory info if in nb mode
 if (len(sys.argv) > 1):
@@ -62,13 +60,13 @@ if (len(sys.argv) > 1):
         get_ipython().system(u'pwd && ls')
 
 
-# In[47]:
+# In[102]:
 
 ############
 #Model name.  
 ############
 Model = "R"
-ModNum = 1
+ModNum = 0
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -78,7 +76,7 @@ else:
     ModIt = str(sys.argv[1])
 
 
-# In[48]:
+# In[103]:
 
 ###########
 #Standard output directory setup
@@ -108,7 +106,7 @@ if uw.rank()==0:
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
 
 
-# In[49]:
+# In[104]:
 
 ###########
 #Check if starting from checkpoint
@@ -130,7 +128,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 
 # Set physical constants and parameters, including the Rayleigh number (*RA*). 
 
-# In[50]:
+# In[105]:
 
 ###########
 #Physical parameters
@@ -207,7 +205,7 @@ AIRDENSITY = ndp.RA*COMP_RA_FACT
 
 
 
-# In[51]:
+# In[106]:
 
 ###########
 #Model setup parameters
@@ -262,15 +260,17 @@ periodic = [False,False]
 elementType = "Q1/dQ0"
 #elementType ="Q2/DPC1"
 
-refineMesh = True
+refineMesh = False
 
+s = 1.2 #Mesh refinement parameter
+ALPHA = 11. #Mesh refinement parameter
 
 #System/Solver stuff
 
 PIC_integration=False
 
 
-# In[52]:
+# In[107]:
 
 ###########
 #Model Runtime parameters
@@ -292,7 +292,7 @@ assert (metric_output >= swarm_update), 'Swarm update is needed before checkpoin
 #assert metric_output >= sticky_air_temp, 'Sticky air temp should be updated more frequently that metrics'
 
 
-# In[53]:
+# In[108]:
 
 ###########
 #Model output parameters
@@ -305,7 +305,7 @@ loadTemp = True
     
 
 
-# In[54]:
+# In[109]:
 
 mesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
                                  elementRes  = (Xres, Yres), 
@@ -320,7 +320,7 @@ temperatureField    = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 temperatureDotField = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 
 
-# In[55]:
+# In[110]:
 
 Xres, MINX, periodic, elementType
 
@@ -329,59 +329,11 @@ Xres, MINX, periodic, elementType
 
 # Create some dummy fevariables for doing top and bottom boundary calculations.
 
-# ## Refine mesh
+# ##Refine mesh
 
-# In[57]:
+# #ICs and BCs
 
-#X-Axis
-
-if refineMesh:
-    mesh.reset()
-    axis = 0
-    origcoords = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
-    edge_rest_lengths = np.diff(origcoords)
-
-    deform_lengths = edge_rest_lengths.copy()
-    min_point =  (abs(mesh.maxCoord[axis]) - abs(mesh.minCoord[axis]))/2.
-    el_reduction = 0.75001
-    dx = mesh.maxCoord[axis] - min_point
-
-    deform_lengths = deform_lengths -                                     ((1.-el_reduction) *deform_lengths[0]) +                                     abs((origcoords[1:] - min_point))*((0.5*deform_lengths[0])/dx)
-
-    #print(edge_rest_lengths.shape, deform_lengths.shape)
-
-    sp.deform_1d(deform_lengths, mesh,axis = 'x',norm = 'Min', constraints = "None")
-
-
-# In[58]:
-
-#Y-Axis
-if refineMesh:
-    #Y-Axis
-    axis = 1
-    origcoords = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
-    edge_rest_lengths = np.diff(origcoords)
-
-    deform_lengths = edge_rest_lengths.copy()
-    min_point =  (mesh.maxCoord[axis])
-    el_reduction = 0.75001
-    dx = mesh.maxCoord[axis]
-
-    deform_lengths = deform_lengths -                                     ((1.-el_reduction)*deform_lengths[0]) +                                     abs((origcoords[1:] - min_point))*((0.5*deform_lengths[0])/dx)
-
-    #print(edge_rest_lengths.shape, deform_lengths.shape)
-
-    sp.deform_1d(deform_lengths, mesh,axis = 'y',norm = 'Min', constraints = "None")
-
-
-# In[ ]:
-
-
-
-
-# # ICs and BCs
-
-# In[22]:
+# In[111]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
@@ -400,7 +352,7 @@ for index, coord in enumerate(mesh.data):
         tempNump[index] = 0.
 
 
-# In[23]:
+# In[112]:
 
 
 #For notebook runs
@@ -409,7 +361,7 @@ for index, coord in enumerate(mesh.data):
 
 # ## Temp ICs
 
-# In[24]:
+# In[113]:
 
 dummymesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
                                  elementRes  = (128, 64), 
@@ -421,7 +373,7 @@ dummytemperatureField = uw.mesh.MeshVariable(mesh=dummymesh, nodeDofCount=1 )
 dummytemperatureField.load("8100/temperatureField.hdf5")
 
 
-# In[25]:
+# In[114]:
 
 if not checkpointLoad:
     for index, coord in enumerate(mesh.data):
@@ -897,45 +849,24 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               fn_bodyforce=buoyancyFn, swarm = swarm)
 
 
-# solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
-# 
-# 
-# 
-# #Set more advanced solver option
-# solver.options.main.Q22_pc_type='uw'
-# solver.options.A11.ksp_rtol=1e-5
-# solver.options.scr.ksp_rtol=1e-5
-# #solver.options.A11.ksp_type="cg"
-# solver.options.scr.use_previous_guess = True
-# solver.options.scr.ksp_set_min_it_converge = 1
-# 
-# solver.options.mg.levels = 3
-# 
-# #solver.options.A11.ksp_monitor=''
-# #solver.options.A11.ksp_converged_reason='
-
-# In[ ]:
+# In[140]:
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
+
+
 #Set more advanced solver option
-solver.options.main.Q22_pc_type='gkgdiag'
-#solver.options.A11.ksp_rtol=1e-2
-#solver.options.scr.ksp_rtol=1e-3
+solver.options.main.Q22_pc_type='uw'
+solver.options.A11.ksp_rtol=1e-5
+solver.options.scr.ksp_rtol=1e-5
 #solver.options.A11.ksp_type="cg"
 solver.options.scr.use_previous_guess = True
-#solver.options.scr.ksp_set_min_it_converge = 1
-#solver.options.main.penalty=10.0
+solver.options.scr.ksp_set_min_it_converge = 1
 
-#solver.options.mg.levels = 3
-#solver.options.main.remove_constant_pressure_null_space=True
-#solver.options.main.penalty = 1e2
+solver.options.mg.levels = 3
 
-solver.options.A11.ksp_rtol=1e-4
-solver.options.scr.ksp_rtol=1e-4
-
-solver.options.A11.ksp_monitor=''
-solver.options.A11.ksp_converged_reason=''
+#solver.options.A11.ksp_monitor=''
+#solver.options.A11.ksp_converged_reason='
 
 
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
@@ -1136,7 +1067,6 @@ figDb.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown wh
 figDb.append( glucifer.objects.Mesh(mesh))
 figDb.append( glucifer.objects.VectorArrows(mesh,velocityField, arrowHead=0.2, scaling=0.01))
 figDb.append( glucifer.objects.Surface(mesh, strainRate_2ndInvariant, logScale=True, colours='brown white blue'))
-figDb.append( glucifer.objects.Surface(mesh, temperatureField))
                            
 
 
@@ -1364,13 +1294,11 @@ f_o.close()
  
 
 
-# In[29]:
+# In[46]:
 
-#figTemp = glucifer.Figure()
-#figTemp.append( glucifer.objects.Surface(mesh, temperatureField))
-#figTemp.append( glucifer.objects.Mesh(mesh))
-#figTemp.save_database('test.gldb')
-#figTemp.show()
+figTemp = glucifer.Figure()
+figTemp.append( glucifer.objects.Surface(mesh, temperatureField))
+figTemp.show()
 
 
 # In[ ]:
