@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.  
 ############
 Model = "R"
-ModNum = 3
+ModNum = 4
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -259,16 +259,16 @@ Yres = RES
 
 
 periodic = [False,False]
-elementType = "Q1/dQ0"
-#elementType ="Q2/DPC1"
+#elementType = "Q1/dQ0"
+elementType ="Q2/DPC1"
 
 refineMesh = False
 
 
 #System/Solver stuff
 
-PIC_integration=True
-ppc = 25
+PIC_integration=False
+ppc = 15
 
 
 # In[81]:
