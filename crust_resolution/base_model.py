@@ -765,6 +765,33 @@ while number_updated != 0:
                     materialVariable.data[particleID] = check
 
 
+# In[ ]:
+
+## Here we'll play around with some different crust-perturbations
+##Voul inlude this is the Graph update function, but for now keep it seperate
+
+#MANTLETOCRUST
+centre = 0.0
+#CRUSTTOMANTLE
+
+square_shape = np.array([ (MANTLETOCRUST ,1. ), (-1.*MANTLETOCRUST ,1. ), ((-1.*MANTLETOCRUST) , 
+                       (1.0 - CRUSTTOMANTLE/2.) ), ((MANTLETOCRUST),(1.0 - CRUSTTOMANTLE/2.))])
+square_shape = fn.shape.Polygon( square_shape)
+
+#sub_zone1 = np.array([ ((2*MANTLETOCRUST + 0.5*MANTLETOLITH),1. ), ((-2.*MANTLETOCRUST + 0.5*MANTLETOLITH) ,1. ), 
+#                     ((-2.*MANTLETOCRUST - 0.5*MANTLETOLITH ) ,(1.0 - CRUSTTOMANTLE/2.) ), ((2*MANTLETOCRUST - 0.5*MANTLETOLITH ),(1.0 - CRUSTTOMANTLE/2. )) ])
+#shape1 = fn.shape.Polygon( sub_zone1)
+
+
+if not checkpointLoad:
+    for particleID in range( gSwarm.particleCoordinates.data.shape[0] ):
+        if square_shape.evaluate(tuple(gSwarm.particleCoordinates.data[particleID])):
+    #        #print "true"
+            materialVariable.data[particleID] = crustIndex
+        #elif shape2.evaluate(tuple(gSwarm.particleCoordinates.data[particleID])):
+        #    materialVariable.data[particleID] = crustIndex
+
+
 # ##Set the values for the masking swarms
 
 # In[35]:
