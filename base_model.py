@@ -24,13 +24,13 @@
 
 # Load python functions needed for underworld. Some additional python functions from os, math and numpy used later on.
 
-# In[1]:
+# In[311]:
 
 #!pip install natsort
 #!pip install networkx
 
 
-# In[2]:
+# In[312]:
 
 import networkx as nx
 import underworld as uw
@@ -45,6 +45,8 @@ import sys
 import natsort
 import shutil
 from easydict import EasyDict as edict
+import slippy2 as sp
+
 
 
 from mpi4py import MPI
@@ -52,7 +54,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 
-# In[3]:
+# In[313]:
 
 #Display working directory info if in nb mode
 if (len(sys.argv) > 1):
@@ -60,13 +62,13 @@ if (len(sys.argv) > 1):
         get_ipython().system(u'pwd && ls')
 
 
-# In[4]:
+# In[314]:
 
 ############
 #Model name.  
 ############
-Model = "T"
-ModNum = 0
+Model = "R"
+ModNum = 1
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -76,7 +78,7 @@ else:
     ModIt = str(sys.argv[1])
 
 
-# In[5]:
+# In[315]:
 
 ###########
 #Standard output directory setup
@@ -106,7 +108,7 @@ if uw.rank()==0:
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
 
 
-# In[6]:
+# In[316]:
 
 ###########
 #Check if starting from checkpoint
@@ -123,10 +125,12 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
         checkpointLoad = False
         
 
+        
+
 
 # Set physical constants and parameters, including the Rayleigh number (*RA*). 
 
-# In[7]:
+# In[317]:
 
 ###########
 #Physical parameters
@@ -151,17 +155,19 @@ dp = edict({'LS':2890.*1e3,
            'g':9.81, 
            'kappa':10**-6,
            'alpha':1.25*10**-5, 
-           'deltaT':2500})
+           'deltaT':2500,
+           'StALS': 150e3})
 
 #non-dimensional parameter dictionary
 ndp = edict({'RA':1e2*newvisc, 
               'LS':1., 
               'etaT':1e5, 
               'etaY':10., 
-              'eta0':1e-3*newvisc, 
+              'eta0':1e-3*newvisc,
+              'StAeta0':1e-2,
               'TS':0.,
               'TB':1., 
-              'cohesion':1.*newvisc})
+              'cohesion':1.*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
 
 
 #dimsional values used in this model
@@ -186,7 +192,7 @@ MANTLETOCRUST = (18.*1e3)/D #Crust depth
 CRUSTTOMANTLE = (300.*1e3)/D
 LITHTOMANTLE = (660.*1e3)/D
 MANTLETOLITH = (200.*1e3)/D
-TOPOHEIGHT = (15.*1e3)/D #rock-air topography limits
+TOPOHEIGHT = (10.*1e3)/D #rock-air topography limits
 AVGTEMP = 0.53 #Used to define lithosphere
 
 
@@ -201,25 +207,22 @@ COMP_RA_FACT = RC/ndp.RA
 AIRVISCOSITY = 0.001
 AIRDENSITY = ndp.RA*COMP_RA_FACT
 
-
-#######################To be replaced soon
-#Physical parameters that can be defined with STDIN,
-#The == '-f': check is a a hack check to see cover the notebook case
-if len(sys.argv) == 1:
-    ndp.cohesion = ndp.cohesion
-elif sys.argv[1] == '-f':
-    ndp.cohesion = ndp.cohesion
-else:
-    ndp.cohesion = float(sys.argv[1])*newvisc
+ndp["StA"] = ndp.RA*COMP_RA_FACT
 
 
-# In[8]:
+
+# In[318]:
+
+ndp.RA
+
+
+# In[319]:
 
 ###########
 #Model setup parameters
 ###########
 
-stickyAir = False
+stickyAir = True
 
 MINX = -1.
 MINY = 0.
@@ -239,53 +242,59 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 64
+RES = 96
+
 
 if MINX == 0.:
     Xres = RES
 else:
     Xres = 2*RES
 
-Yres = RES
+if stickyAir:
+    Yres = RES
+    MAXY = 1. + dp.StALS/dp.LS #150km
+    
+else:
+    Yres = RES
+    MAXY = 1.
 
 
-periodic = [False,False]
+periodic = [True, False]
 elementType = "Q1/dQ0"
 #elementType ="Q2/DPC1"
 
-refineMesh = False
+refineMesh = True
 
-s = 1.2 #Mesh refinement parameter
-ALPHA = 11. #Mesh refinement parameter
 
 #System/Solver stuff
 
-PIC_integration=False
+PIC_integration=True
+ppc = 25
 
 
-# In[9]:
+# In[320]:
 
 ###########
 #Model Runtime parameters
 ###########
 
-swarm_update = 25
-swarm_repop = 25
+swarm_update = 2
+swarm_repop = 10
 files_output = 1e6
-gldbs_output = 1000
+gldbs_output = 2
 images_output = 1e6
-checkpoint_every = 100
-metric_output = 25
-sticky_air_temp = 5
+checkpoint_every = 2
+metric_output = 2
+sticky_air_temp = 1e6
 
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
 
-assert metric_output <= checkpoint_every, 'Checkpointing should run less or as ofen as metric output'
-assert (metric_output >= swarm_update), 'Swarm update is needed before checkpointing'
-assert metric_output >= sticky_air_temp, 'Sticky air temp should be updated more frequently that metrics'
+#assert metric_output <= checkpoint_every, 'Checkpointing should run less or as ofen as metric output'
+#assert (metric_output >= swarm_update), 'Swarm update is needed before checkpointing'
+#assert metric_output >= sticky_air_temp, 'Sticky air temp should be updated more frequently that metrics'
 
 
-# In[10]:
+# In[321]:
 
 ###########
 #Model output parameters
@@ -298,9 +307,9 @@ loadTemp = True
     
 
 
-# In[11]:
+# In[322]:
 
-mesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
+mesh = uw.mesh.FeMesh_Cartesian( elementType = elementType,
                                  elementRes  = (Xres, Yres), 
                                  minCoord    = (MINX,MINY), 
                                  maxCoord=(MAXX,MAXY), periodic=periodic)
@@ -313,7 +322,7 @@ temperatureField    = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 temperatureDotField = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 
 
-# In[12]:
+# In[323]:
 
 Xres, MINX, periodic, elementType
 
@@ -322,98 +331,82 @@ Xres, MINX, periodic, elementType
 
 # Create some dummy fevariables for doing top and bottom boundary calculations.
 
-# ##Refine mesh
+# ## Refine mesh
 
-# In[13]:
+# In[324]:
+
+#X-Axis
 
 if refineMesh:
-    alpha=ALPHA
-    newys = []
-    newxs = []
-    for index, coord in enumerate(mesh.data):
-        y0 = coord[1]
-        x0 = abs(coord[0])
-        if y0 >= 1.0:
-            newy = y0
-        else:
-            newy = (math.log(alpha*y0 + math.e) - 1)*(1/(math.log(alpha + math.e) - 1))
-        newx = (math.log((alpha/2.)*x0 + math.e) - 1)*(1/(math.log((alpha/2.) + math.e) - 1))
-        if coord[0] <= 0:
-            newx = -1.*newx
-        newys.append(newy)
-        newxs.append(newx)
-        
-    with mesh.deform_mesh():
-        mesh.data[:,1] = newys
-        mesh.data[:,0] = newxs
+    mesh.reset()
+    axis = 0
+    origcoords = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
+    edge_rest_lengths = np.diff(origcoords)
+
+    deform_lengths = edge_rest_lengths.copy()
+    min_point =  (abs(mesh.maxCoord[axis]) - abs(mesh.minCoord[axis]))/2.
+    el_reduction = 0.5001
+    dx = mesh.maxCoord[axis] - min_point
+
+    deform_lengths = deform_lengths -                                     ((1.-el_reduction) *deform_lengths[0]) +                                     abs((origcoords[1:] - min_point))*((0.5*deform_lengths[0])/dx)
+
+    #print(edge_rest_lengths.shape, deform_lengths.shape)
+
+    sp.deform_1d(deform_lengths, mesh,axis = 'x',norm = 'Min', constraints = [])
 
 
-# #THis one for the rectangular mesh
-# 
-# if refineMesh:
-#     alpha = ALPHA
-#     newys = []
-#     newxs = []
-#     for index, coord in enumerate(linearMesh.data):
-#         y0 = coord[1]
-#         x0 = abs(coord[0])
-#         if y0 == MAXY:
-#             newy = y0
-#         else:
-#             ynorm = y0/MAXY
-#             newy = MAXY*(math.log(alpha*ynorm + math.e) - 1)*(1/(math.log(alpha + math.e) - 1))
-#         if coord[0] > 0:
-#             newx = (math.e**(x0*(math.log((alpha/2.) + math.e) - 1) + 1 ) - math.e)/(alpha/2.)
-#         else:
-#             newx = -1.*(math.e**(x0*(math.log((alpha/2.) + math.e) - 1) + 1 ) - math.e)/(alpha/2.)
-#         newys.append(newy)
-#         newxs.append(newx)
-#         #print y0,newy
-# 
-#     with linearMesh.deform_mesh():
-#             linearMesh.data[:,1] = newys
-#             linearMesh.data[:,0] = newxs
+# In[325]:
 
-# ay = elementMesh.minCoord[1]
-# by = elementMesh.maxCoord[1]
-# ax = 0.
-# bx = elementMesh.maxCoord[0]
-# 
-# newys = []
-# newxs = []
-# for index, coord in enumerate(elementMesh.data):
-#     y0 = coord[1]
-#     x0 = abs(coord[0])
-#     newy =(by - (ay + (by-ay)*((by - y0)/(by-ay))**s))
-#     newx =((ax + (bx-ax)*((bx - x0)/(bx-ax))**s))
-#     if coord[0] < 0.:
-#         newx *= -1.
-#         
-#     newys.append(newy)
-#     newxs.append(newx)
-#     
-# if refineMesh:
-#     with elementMesh.deform_mesh():
-#         elementMesh.data[:,1] = newys
-#         elementMesh.data[:,0] = newxs
+axis = 1
+orgs = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
 
-# In[14]:
-
-#meshfig = glucifer.Figure(figsize=(800,400))
-#meshfig.append( glucifer.objects.Mesh(elementMesh) )
-#meshfig.show()
-#meshfig.save_database('test.gldb')
+value_to_constrain = 1.
 
 
-# #ICs and BCs
+yconst = [(sp.find_closest(orgs, value_to_constrain), np.array([1.,0]))]
 
-# In[15]:
+
+# In[326]:
+
+#Y-Axis
+if refineMesh:
+    #Y-Axis
+    axis = 1
+    origcoords = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
+    edge_rest_lengths = np.diff(origcoords)
+
+    deform_lengths = edge_rest_lengths.copy()
+    min_point =  (mesh.maxCoord[axis])
+    el_reduction = 0.5001
+    dx = mesh.maxCoord[axis]
+
+    deform_lengths = deform_lengths -                                     ((1.-el_reduction)*deform_lengths[0]) +                                     abs((origcoords[1:] - min_point))*((0.5*deform_lengths[0])/dx)
+
+    #print(edge_rest_lengths.shape, deform_lengths.shape)
+
+    sp.deform_1d(deform_lengths, mesh,axis = 'y',norm = 'Min', constraints = yconst)
+
+
+# In[ ]:
+
+
+
+
+# # ICs and BCs
+
+# In[327]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
 pressureField.data[:] = 0.
 temperatureField.data[:] = 0.
 temperatureDotField.data[:] = 0.
+
+
+# ## Temp ICs
+
+# In[328]:
+
 
 # Setup temperature initial condition via numpy arrays
 A = 0.01
@@ -426,164 +419,48 @@ for index, coord in enumerate(mesh.data):
         tempNump[index] = 0.
 
 
-# In[16]:
+# In[329]:
+
+dummymesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
+                                 elementRes  = (128, 64), 
+                                 minCoord    = (-1.,0.), 
+                                 maxCoord=(1.,1.), periodic=False, partitioned=False)
+
+    
+dummytemperatureField = uw.mesh.MeshVariable(mesh=dummymesh, nodeDofCount=1 )
+
+dummytemperatureField.load("crust_resolution/8100/temperatureField.hdf5")
 
 
-#For notebook runs
-#ModIt = "96"
+# In[330]:
+
+checkpointLoad
 
 
-# In[ ]:
+# In[335]:
+
+if not checkpointLoad:
+    temperatureDotField.data[:] = 0.
+    for index, coord in enumerate(mesh.data):
+        if coord[1] > 1.:
+            temperatureField.data[index] = 0.
+        #Don't know mesh partitions in ad vance, and possible diferent between 'real' and 'dummy' mesh
+        else:
+            temperatureField.data[index] = dummytemperatureField.evaluate([coord[0], coord[1]])
 
 
+# In[337]:
 
+#figTemp = glucifer.Figure()
+#figTemp.append( glucifer.objects.Surface(mesh, temperatureField))
+#figTemp.append( glucifer.objects.Mesh(mesh))
+#figTemp.save_database('test.gldb')
+#figTemp.show()
 
-# In[ ]:
-
-
-
-
-# In[17]:
-
-########################################
-#No sticky air, square models
-########################################
-
-if (loadTemp == True) and (refineMesh == False) and (squareModel == True) and (stickyAir == False) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/1.0_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/1.0_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/1.0_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/1.0_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/1.0_256_init_temp.hdf5')
-elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (stickyAir == False) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/r11_1.0_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/r11_1.0_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/r11_1.0_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/r11_1.0_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/r11_1.0_256_init_temp.hdf5') 
-
-
-# In[18]:
-
-########################################
-#Sticky air, square models
-########################################
-if (loadTemp == True) and (refineMesh == False) and (squareModel == True) and (stickyAir == True) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/sqa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/sqa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/sqa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/sqa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/sqa_256_init_temp.hdf5')
-elif (loadTemp == True) and (refineMesh == True) and (squareModel == True) and (stickyAir == True) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/r11_sqa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/r11_sqa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/r11_sqa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/r11_sqa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/r11_sqa_256_init_temp.hdf5') 
-
-
-# In[19]:
-
-########################################
-#Sticky air, rectangular models
-########################################
-
-if (loadTemp == True) and (refineMesh == False) and (squareModel == False) and (stickyAir == True) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/sa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/sa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/sa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/sa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/sa_256_init_temp.hdf5')
-elif (loadTemp == True) and (refineMesh == True) and (squareModel == False) and (stickyAir == True) and not checkdirs:
-    print "True"
-    if ModIt == str(96):
-        temperatureField._oldload('temp_ics/r11_sa_96_init_temp.hdf5')
-    elif ModIt == str(128):
-        temperatureField._oldload('temp_ics/r11_sa_128_init_temp.hdf5')
-    elif ModIt == str(144):
-        temperatureField._oldload('temp_ics/r11_sa_144_init_temp.hdf5')
-    elif ModIt == str(192):
-        temperatureField._oldload('temp_ics/r11_sa_192_init_temp.hdf5')
-    elif ModIt == str(256):
-        temperatureField._oldload('temp_ics/r11_sa_256_init_temp.hdf5')
-
-
-# dres = 96
-# dummyelementMesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"), 
-#                                          elementRes = (dres, dres), 
-#                                            minCoord = (0., 0.), 
-#                                            maxCoord = (1., 1.))
-# 
-# dummytemperatureMesh = dummyelementMesh 
-# dummytemperatureField = uw.fevariable.FeVariable( feMesh=dummytemperatureMesh, nodeDofCount=1 )
-# dummytemperatureField.load('temp_ics/temperatureField_4_10200.hdf5')
-# 
-# for index, coord in enumerate(linearMesh.data):
-#     #This bit determines whether you see a reflected image or not
-#     #xpos, ypos = (1.- abs(coord[0])), coord[1]
-#     xpos, ypos = (abs(coord[0])), coord[1]
-#     if ypos >= 1:
-#         temperatureField.data[index] = 0.
-#     else:
-#         #print(dummytemperatureField.evaluate((xpos, ypos)))
-#         #randpert = np.random.rand(1)[0]*(50./2500)
-#         randpert = 0.
-#         #Don't know mesh partitions in advance, and possible diferent between 'real' and 'dummy' mesh
-#         try:
-#             temperatureField.data[index] = dummytemperatureField.evaluate((xpos, ypos))  + randpert
-#         except:
-#             pass
-#             
-# temperatureField.save('temp_ics/r11_1.0_144_init_temp.hdf5')
 
 # 
 
-# In[ ]:
-
-
-
-
-# In[20]:
-
-#icfnam= "R(11)_" + "2_" + str(RES) + "_init_temp.hdf5"
-#icpath = "temp_ics/" + icfnam 
-#icfnam= str(Model) + str(ModIt) + "_init_temp.hdf5"
-#temperatureField.save(icpath)
-#icfnam
-#icpath
-
-
-# In[21]:
+# In[334]:
 
 # Get the actual sets 
 #
@@ -608,14 +485,14 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 
 
 
-# In[22]:
+# In[188]:
 
 # Now setup the dirichlet boundary condition
 # Note that through this object, we are flagging to the system 
 # that these nodes are to be considered as boundary conditions. 
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField, 
-                                              indexSetsPerDof=(IWalls, JWalls) )
+                                              indexSetsPerDof=(TWalls, JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField, 
@@ -625,22 +502,19 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
 # ##Add Random 125 K temp perturbation
 # 
 
-# In[23]:
-
-tempNump = temperatureField.data
-
-#In gerneral we only want to do this on the initial setup, not restarts
-
-if not checkpointLoad:
-    for index, coord in enumerate(mesh.data):
-        pertCoeff = (0.05*(np.random.rand(1)[0] - 0.5)) #this should create values between [-0.5,0.5] from uniform dist.
-        ict = tempNump[index]
-        tempNump[index] = ict + pertCoeff
-
+# tempNump = temperatureField.data
+# 
+# #In gerneral we only want to do this on the initial setup, not restarts
+# 
+# if not checkpointLoad:
+#     for index, coord in enumerate(mesh.data):
+#         pertCoeff = (0.05*(np.random.rand(1)[0] - 0.5)) #this should create values between [-0.5,0.5] from uniform dist.
+#         ict = tempNump[index]
+#         tempNump[index] = ict + pertCoeff
 
 # ##Reset bottom Dirichlet conds.
 
-# In[24]:
+# In[189]:
 
 # Set temp boundaries 
 # on the boundaries
@@ -650,9 +524,9 @@ for index in mesh.specialSets["MaxJ_VertexSet"]:
     temperatureField.data[index] = ndp.TS
 
 
-# In[25]:
+# In[190]:
 
-checkdirs
+#checkdirs
 
 
 # In[ ]:
@@ -662,7 +536,7 @@ checkdirs
 
 # # Particles
 
-# In[26]:
+# In[191]:
 
 ###########
 #Material Swarm and variables
@@ -678,7 +552,7 @@ varlist = [materialVariable, rockIntVar, airIntVar, lithIntVar]
 varnames = ['materialVariable', 'rockIntVar', 'airIntVar', 'lithIntVar']
 
 
-# In[27]:
+# In[192]:
 
 ###########
 #Swarms for surface intragrals when using Sticky air
@@ -703,7 +577,7 @@ dumout = baseintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
 # #Initialise swarm variables, or Swarm checkpoint load
 
-# In[28]:
+# In[193]:
 
 mantleIndex = 0
 lithosphereIndex = 1
@@ -725,8 +599,7 @@ else:
 
     # Layouts are used to populate the swarm across the whole domain
     # Create the layout object
-    #layout = uw.swarm.layouts.GlobalSpaceFillerLayout( swarm=gSwarm, particlesPerCell=20)
-    layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=15)
+    layout = uw.swarm.layouts.PerCellRandomLayout(swarm=gSwarm, particlesPerCell=ppc)
     # Now use it to populate.
     gSwarm.populate_using_layout( layout=layout )
 
@@ -748,7 +621,7 @@ else:
 
 # #Material Graphs
 
-# In[29]:
+# In[194]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -756,12 +629,12 @@ else:
 material_list = [0,1,2,3]
 
 
-# In[30]:
+# In[195]:
 
 print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.data[:])))
 
 
-# In[31]:
+# In[196]:
 
 
 
@@ -811,12 +684,12 @@ DG[0][2]['depthcondition'] = MANTLETOCRUST
 DG[1][2]['depthcondition'] = MANTLETOCRUST
 
 
-# In[32]:
+# In[197]:
 
 DG.nodes()
 
 
-# In[33]:
+# In[198]:
 
 remove_nodes = []
 for node in DG.nodes():
@@ -827,12 +700,12 @@ for rmnode in remove_nodes:
     DG.remove_node(rmnode)
 
 
-# In[34]:
+# In[199]:
 
 DG.nodes()
 
 
-# In[35]:
+# In[200]:
 
 #A Dictionary to map strings in the graph (e.g. 'depthcondition') to particle data arrays
 
@@ -847,7 +720,7 @@ conditionmap['avgtempcondition'] = {}
 conditionmap['avgtempcondition']['data'] = particletemps
 
 
-# In[36]:
+# In[201]:
 
 def update_swarm(graph, particleIndex):
     """
@@ -896,7 +769,7 @@ def update_swarm(graph, particleIndex):
         return innerchange
 
 
-# In[37]:
+# In[202]:
 
 #Cleanse the swarm of its sins
 #For some Material Graphs, the graph may have to be treaversed more than once
@@ -915,7 +788,7 @@ while number_updated != 0:
 
 # ##Set the values for the masking swarms
 
-# In[38]:
+# In[203]:
 
 #Setup up a masking Swarm variable for the integrations.
 #These should be rebuilt at same frequency as the metric calcualtions
@@ -936,7 +809,7 @@ lithIntVar.data[islith] = 1.
 # #Material properties
 # 
 
-# In[39]:
+# In[204]:
 
 #Make variables required for plasticity
 
@@ -953,7 +826,7 @@ depthField.data[:] = depth.evaluate(mesh)
 depthField.data[np.where(depthField.data[:] < 0.)[0]] = 0.
 
 
-# In[40]:
+# In[205]:
 
 ##Basic mantle viscosity Functions
 viscosityl2 = newvisc*fn.math.exp((math.log(ndp.etaT)*-1*temperatureField) + (depthField*math.log(ndp.etaY)))
@@ -976,7 +849,7 @@ crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 # 
 # Here the functions for density, viscosity etc. are set. These functions and/or values are preserved for the entire simulation time. 
 
-# In[41]:
+# In[206]:
 
 # Here we set a viscosity value of '1.' for both materials
 viscosityMapFn = fn.branching.map( fn_key = materialVariable,
@@ -1002,7 +875,7 @@ buoyancyFn = gravity*densityMapFn
 # 
 # Setup linear Stokes system to get the initial velocity.
 
-# In[42]:
+# In[207]:
 
 #We first set up a l
 stokesPIC = uw.systems.Stokes(velocityField=velocityField, 
@@ -1015,25 +888,20 @@ stokesPIC = uw.systems.Stokes(velocityField=velocityField,
 
 # We do one solve with linear viscosity to get the initial strain rate invariant. This solve step also calculates a 'guess' of the the velocity field based on the linear system, which is used later in the non-linear solver.
 
-# In[43]:
-
-checkpointLoad
-
-
-# In[44]:
+# In[208]:
 
 if not checkpointLoad:
     solver = uw.systems.Solver(stokesPIC)
     solver.solve() 
 
 
-# In[45]:
+# In[209]:
 
 #Switch particle escape on, this will also trigger the inflow population control 
 gSwarm.particleEscape = True
 
 
-# In[46]:
+# In[210]:
 
 # Setup the Stokes system again, now with linear or nonlinear visocity viscosity.
 
@@ -1049,21 +917,42 @@ stokesPIC2 = uw.systems.Stokes(velocityField=velocityField,
                               fn_bodyforce=buoyancyFn, swarm = swarm)
 
 
-# In[47]:
+# solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
+# 
+# 
+# 
+# #Set more advanced solver option
+# solver.options.main.Q22_pc_type='uw'
+# solver.options.A11.ksp_rtol=1e-5
+# solver.options.scr.ksp_rtol=1e-5
+# #solver.options.A11.ksp_type="cg"
+# solver.options.scr.use_previous_guess = True
+# solver.options.scr.ksp_set_min_it_converge = 1
+# 
+# solver.options.mg.levels = 3
+# 
+# #solver.options.A11.ksp_monitor=''
+# #solver.options.A11.ksp_converged_reason='
+
+# In[211]:
 
 solver = uw.systems.Solver(stokesPIC2) # altered from PIC2
 
-
-
 #Set more advanced solver option
-#solver.options.main.Q22_pc_type='uw'
-#solver.options.A11.ksp_rtol=1e-5
-#solver.options.scr.ksp_rtol=1e-5
+solver.options.main.Q22_pc_type='gkgdiag'
+#solver.options.A11.ksp_rtol=1e-2
+#solver.options.scr.ksp_rtol=1e-3
 #solver.options.A11.ksp_type="cg"
-#solver.options.scr.use_previous_guess = True
+solver.options.scr.use_previous_guess = True
 #solver.options.scr.ksp_set_min_it_converge = 1
+#solver.options.main.penalty=10.0
 
 #solver.options.mg.levels = 3
+#solver.options.main.remove_constant_pressure_null_space=True
+#solver.options.main.penalty = 1e2
+
+solver.options.A11.ksp_rtol=1e-4
+solver.options.scr.ksp_rtol=1e-4
 
 solver.options.A11.ksp_monitor=''
 solver.options.A11.ksp_converged_reason=''
@@ -1072,7 +961,7 @@ solver.options.A11.ksp_converged_reason=''
 # Solve for initial pressure and velocity using a quick non-linear Picard iteration
 # 
 
-# In[48]:
+# In[212]:
 
 solver.solve(nonLinearIterate=True)
 
@@ -1082,7 +971,12 @@ solver.solve(nonLinearIterate=True)
 # 
 # Setup the system in underworld by flagging the temperature and velocity field variables.
 
-# In[49]:
+# In[ ]:
+
+
+
+
+# In[213]:
 
 #Create advdiff system
 
@@ -1117,7 +1011,7 @@ advector = uw.systems.SwarmAdvector( swarm         = gSwarm,
 # 
 # $$ \delta = \frac{\lvert \langle W \rangle - \frac{\langle \Phi \rangle}{Ra} \rvert}{max \left(  \langle W \rangle,  \frac{\langle \Phi \rangle}{Ra}\right)} \times 100% $$
 
-# In[50]:
+# In[214]:
 
 #Setup some Integrals. We want these outside the main loop...
 tempVariable = gSwarm.add_variable( dataType="double", count=1 )
@@ -1139,7 +1033,7 @@ vdintair = uw.utils.Integral((4.*viscosityMapFn*sinner)*airIntVar, mesh)
 vdintlith = uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh)
 
 
-# In[51]:
+# In[215]:
 
 #These should differ if the the map function assigns different properties to bulk mantle
 
@@ -1155,7 +1049,7 @@ print(uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh).evaluate()[
 
 # \begin{equation}  \langle T \rangle  = \int^1_0 \int^1_0 T \, dxdy \end{equation}
 
-# In[52]:
+# In[216]:
 
 def avg_temp():
     return tempint.evaluate()[0]/areaint.evaluate()[0]
@@ -1211,7 +1105,7 @@ def visc_extr(viscfn):
     return vuviscfn.max_global(), vuviscfn.min_global()
 
 
-# In[53]:
+# In[217]:
 
 #Fields for saving data / fields
 
@@ -1236,7 +1130,7 @@ viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
 
 
-# In[54]:
+# In[218]:
 
 #Images
 figEta = glucifer.Figure()
@@ -1265,18 +1159,19 @@ figDb = glucifer.Figure()
 figDb.append( glucifer.objects.Points(gSwarm,viscVariable, logScale=True, colours='brown white blue'))
 figDb.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red'))
 figDb.append( glucifer.objects.Mesh(mesh))
-figDb.append( glucifer.objects.VectorArrows(mesh,velocityField, arrowHead=0.2, scaling=0.2))
+figDb.append( glucifer.objects.VectorArrows(mesh,velocityField, arrowHead=0.2, scaling=0.01))
 figDb.append( glucifer.objects.Surface(mesh, strainRate_2ndInvariant, logScale=True, colours='brown white blue'))
+figDb.append( glucifer.objects.Surface(mesh, temperatureField))
                            
 
 
-# In[55]:
+# In[219]:
 
 
 pics = uw.swarm.PICIntegrationSwarm(gSwarm)
 
 
-# In[56]:
+# In[220]:
 
 def checkpoint1(step, checkpointPath,filename, filewrites):
     path = checkpointPath + str(step) 
@@ -1305,7 +1200,7 @@ def checkpoint2(step, checkpointPath, swarm, filename, varlist = [materialVariab
     
 
 
-# In[57]:
+# In[221]:
 
 ###########
 #Open file for writing metrics
@@ -1334,18 +1229,13 @@ else:
 # The main time stepping loop begins here. Before this the time and timestep are initialised to zero and the output statistics arrays are set up. Also the frequency of outputting basic statistics to the screen is set in steps_output.
 # 
 
-# In[58]:
-
-max_vx_surf(velocityField, surfintswarm) 
-
-
-# In[59]:
+# In[222]:
 
 # initialise timer for computation
 startMain = time.clock()
-# Perform steps
-while realtime < 0.5:
-#while step < 5:
+# Perform steps#
+while realtime < 0.05:
+#while step < 8:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
@@ -1479,119 +1369,58 @@ f_o.close()
 
 # In[ ]:
 
-figEta = glucifer.Figure(figsize=(1024,384))
-figEta.append( glucifer.objects.Points(gSwarm,viscVariable, logScale=True))
-figEta.show()
+#figEta = glucifer.Figure(figsize=(1024,384))
+#figEta.append( glucifer.objects.Points(gSwarm,viscVariable, logScale=True))
 #figEta.save_database('test.gldb')
+#figEta.show()
 
-
-# In[ ]:
-
-get_ipython().magic(u'pinfo glucifer.objects.Points')
 
 
 # In[ ]:
 
 
-figMat = glucifer.Figure()
-figMat.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red'))
-figMat.append( glucifer.objects.Points(surfintswarm,materialVariable, pointSize= 5.))
-#figMat.append( glucifer.objects.Mesh(linearMesh))
-figMat.save_database('test.gldb')
-figMat.show()
+#figMat = glucifer.Figure()
+#figMat.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red'))
+#figMat.append( glucifer.objects.Points(surfintswarm,materialVariable, pointSize= 5.))
+#figMat.append( glucifer.objects.Mesh(mesh))
+#figMat.save_database('test.gldb')
+#figMat.show()
 
  
 
 
 # In[ ]:
 
-figTemp = glucifer.Figure()
-figTemp.append( glucifer.objects.Surface(elementMesh, temperatureField))
-figTemp.show()
+#avg_temp()
 
 
 # In[ ]:
 
-figStrainRate = glucifer.Figure()
-figStrainRate.append( glucifer.objects.Surface(elementMesh, strainRate_2ndInvariant, logScale=True))
-figStrainRate.show()
+
+
+
+# In[63]:
+
+#figStrainRate = glucifer.Figure()
+#figStrainRate.append( glucifer.objects.Surface(mesh, strainRate_2ndInvariant, logScale=True))
+#figStrainRate.show()
 #figStrainRate.save_database('test.gldb')
 
 
 # In[ ]:
 
-figVelocityMag = glucifer.Figure()
-figVelocityMag.append( glucifer.objects.Surface(elementMesh, temperatureField))
-figVelocityMag.append( glucifer.objects.VectorArrows(elementMesh,velocityField, arrowHead=0.2, scaling=0.2))
-figVelocityMag.show()
-
-
-# In[ ]:
-
-machine_time = (time.clock()-start)
+machine_time = (time.clock()-startMain)
 print("total time is: " + str(machine_time))
 
 
-# In[ ]:
+# In[119]:
 
-figDb.save_database('test.gldb')
-
-
-# In[ ]:
-
-velocityField.evaluate(IWalls)[:,1].max()
+velocityField.evaluate(IWalls)[:,0].max()
 
 
-# In[ ]:
+# In[120]:
 
 velocityField.evaluate(TWalls)[:,0].max()
-
-
-# In[ ]:
-
-solver.options.A11.list()
-
-
-# In[ ]:
-
-10**(-6.5)
-
-
-# In[ ]:
-
-varlist[0]
-
-
-# In[ ]:
-
-varb = varlist[ix]
-varb.save(os.path.join(checkpointPath,varnames[ix] + ".h5"))
-
-
-# In[ ]:
-
-checkpointPath
-
-
-# In[ ]:
-
-checkpointPath
-
-
-# In[ ]:
-
-step = 250
-path = checkpointPath + str(step) 
-varb.save(os.path.join(path,varnames[ix] + ".h5"))
-
-
-# In[ ]:
-
-if step % checkpoint_every == 0:
-    if uw.rank() == 0:
-        checkpoint1(step, checkpointPath,f_o, metric_output)           
-    checkpoint2(step, checkpointPath, gSwarm, f_o, varlist = varlist, varnames = varnames)
-    f_o = open(os.path.join(outputPath, outputFile), 'a') #is this line supposed to be here?
 
 
 # In[ ]:
