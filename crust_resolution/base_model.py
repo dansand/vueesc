@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.  
 ############
 Model = "R"
-ModNum = 20
+ModNum = 5
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -165,7 +165,7 @@ ndp = edict({'RA':1e2*newvisc,
               'eta0':1e-3*newvisc, 
               'TS':0.,
               'TB':1., 
-              'cohesion':4.6*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
+              'cohesion':10.*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
 
 
 #dimsional values used in this model
@@ -271,8 +271,8 @@ refineMesh = True
 
 #System/Solver stuff
 
-PIC_integration=False
-ppc = 15
+PIC_integration=True
+ppc = 25
 
 
 # In[9]:
@@ -281,13 +281,13 @@ ppc = 15
 #Model Runtime parameters
 ###########
 
-swarm_update = 25
-swarm_repop = 25
+swarm_update = 10
+swarm_repop = 10
 files_output = 1e6
-gldbs_output = 1
+gldbs_output = 100
 images_output = 1e6
 checkpoint_every = 200
-metric_output = 2
+metric_output = 10
 sticky_air_temp = 1e6
 
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
@@ -418,9 +418,9 @@ for index, coord in enumerate(mesh.data):
 
 dummymesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
                                  elementRes  = (128, 64), 
-                                 minCoord    = (MINX,MINY), 
-                                 maxCoord=(MAXX,MAXY), periodic=periodic)
-    
+                                 minCoord    = (-1.,0.), 
+                                 maxCoord=(1.,1.), periodic=False, partitioned=False)
+
 dummytemperatureField = uw.mesh.MeshVariable(mesh=dummymesh, nodeDofCount=1 )
 
 dummytemperatureField.load("8100/temperatureField.hdf5")
@@ -1218,8 +1218,8 @@ else:
 # initialise timer for computation
 startMain = time.clock()
 # Perform steps
-#while realtime < 0.05:
-while step < 1:
+while realtime < 0.05:
+#while step < 1:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
