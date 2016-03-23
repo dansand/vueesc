@@ -165,7 +165,7 @@ ndp = edict({'RA':1e2*newvisc,
               'eta0':1e-3*newvisc, 
               'TS':0.,
               'TB':1., 
-              'cohesion':10.*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
+              'cohesion':7.*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
 
 
 #dimsional values used in this model
@@ -775,7 +775,7 @@ centre = 0.0
 #CRUSTTOMANTLE
 
 square_shape = np.array([ (MANTLETOCRUST ,1. ), (-1.*MANTLETOCRUST ,1. ), ((-1.*MANTLETOCRUST) , 
-                       (1.0 - CRUSTTOMANTLE/2.) ), ((MANTLETOCRUST),(1.0 - CRUSTTOMANTLE/2.))])
+                       (1.0 - 1.5*CRUSTTOMANTLE) ), ((MANTLETOCRUST),(1.0 - 1.5*CRUSTTOMANTLE))])
 square_shape = fn.shape.Polygon( square_shape)
 
 #sub_zone1 = np.array([ ((2*MANTLETOCRUST + 0.5*MANTLETOLITH),1. ), ((-2.*MANTLETOCRUST + 0.5*MANTLETOLITH) ,1. ), 
