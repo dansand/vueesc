@@ -67,7 +67,7 @@ if (len(sys.argv) > 1):
 ############
 #Model name.  
 ############
-Model = "R"
+Model = "T"
 ModNum = 0
 
 if len(sys.argv) == 1:
@@ -145,9 +145,13 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 #ExceptionName, propertyName GLOBAL_CONSTANT_NAME, globalVarName, instanceVarName, functionParameterName, localVarName
 ###########
 
+#RA = 1e6
+#newvisc= math.exp(math.log(1e5)*0.53)*RA/(math.exp(math.log(1e5)*0.53)*1e2)
 
 newvisc= math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = ETAT, and 0.53 is the steady state average temp of the system 
+
+
 
 #dimensional parameter dictionary
 dp = edict({'LS':2890.*1e3,
@@ -156,7 +160,7 @@ dp = edict({'LS':2890.*1e3,
            'kappa':10**-6,
            'alpha':1.25*10**-5, 
            'deltaT':2500,
-           'StALS': 150e3})
+           'StALS': 100e3})
 
 #non-dimensional parameter dictionary
 ndp = edict({'RA':1e2*newvisc, 
@@ -164,7 +168,7 @@ ndp = edict({'RA':1e2*newvisc,
               'etaT':1e5, 
               'etaY':10., 
               'eta0':1e-3*newvisc,
-              'StAeta0':1e-2,
+              'StAeta0':5e-3,
               'TS':0.,
               'TB':1., 
               'cohesion':1.*newvisc}) #4.6 is the transistion from periodic to stagnant lid.
@@ -199,24 +203,21 @@ AVGTEMP = 0.53 #Used to define lithosphere
 
 #Compositional Rayliegh number of rock-air
 ETAREF = rho*g*a*dT*((D*1e3)**3)/(ndp.RA*kappa) #equivalent dimesnional reference viscosity
-RC = (3300*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
+#RC = (3300*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
+RC = (1650*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
+
 COMP_RA_FACT = RC/ndp.RA
 
 
 #Additional dimensionless paramters
-AIRVISCOSITY = 0.001
-AIRDENSITY = ndp.RA*COMP_RA_FACT
+#AIRVISCOSITY = 0.001
 
+AIRDENSITY = ndp.RA*COMP_RA_FACT
 ndp["StA"] = ndp.RA*COMP_RA_FACT
 
 
 
 # In[8]:
-
-ndp.RA
-
-
-# In[9]:
 
 ###########
 #Model setup parameters
@@ -242,7 +243,17 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 96
+RES = 128
+
+#######################To be replaced soon
+#Physical parameters that can be defined with STDIN,
+#The == '-f': check is a a hack check to see cover the notebook case
+if len(sys.argv) == 1:
+    RES = RES
+elif sys.argv[1] == '-f':
+    RES = RES
+else:
+    RES = int(sys.argv[1])
 
 
 if MINX == 0.:
@@ -272,7 +283,7 @@ PIC_integration=True
 ppc = 25
 
 
-# In[10]:
+# In[9]:
 
 ###########
 #Model Runtime parameters
@@ -281,10 +292,10 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 10
 files_output = 1e6
-gldbs_output = 10
+gldbs_output = 200
 images_output = 1e6
-checkpoint_every = 20
-metric_output = 10
+checkpoint_every = 200
+metric_output = 20
 sticky_air_temp = 1e6
 
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early 
@@ -294,7 +305,12 @@ comm.Barrier() #Barrier here so not procs run the check in the next cell too ear
 #assert metric_output >= sticky_air_temp, 'Sticky air temp should be updated more frequently that metrics'
 
 
-# In[11]:
+# In[ ]:
+
+
+
+
+# In[10]:
 
 ###########
 #Model output parameters
@@ -307,7 +323,7 @@ loadTemp = True
     
 
 
-# In[12]:
+# In[11]:
 
 mesh = uw.mesh.FeMesh_Cartesian( elementType = elementType,
                                  elementRes  = (Xres, Yres), 
@@ -322,7 +338,7 @@ temperatureField    = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 temperatureDotField = uw.mesh.MeshVariable( mesh=mesh,         nodeDofCount=1 )
 
 
-# In[13]:
+# In[12]:
 
 Xres, MINX, periodic, elementType
 
@@ -333,7 +349,7 @@ Xres, MINX, periodic, elementType
 
 # ## Refine mesh
 
-# In[14]:
+# In[13]:
 
 #X-Axis
 
@@ -355,7 +371,7 @@ if refineMesh:
     sp.deform_1d(deform_lengths, mesh,axis = 'x',norm = 'Min', constraints = [])
 
 
-# In[15]:
+# In[14]:
 
 axis = 1
 orgs = np.linspace(mesh.minCoord[axis], mesh.maxCoord[axis], mesh.elementRes[axis] + 1)
@@ -366,7 +382,7 @@ value_to_constrain = 1.
 yconst = [(sp.find_closest(orgs, value_to_constrain), np.array([1.,0]))]
 
 
-# In[16]:
+# In[15]:
 
 #Y-Axis
 if refineMesh:
@@ -384,7 +400,7 @@ if refineMesh:
 
     #print(edge_rest_lengths.shape, deform_lengths.shape)
 
-    sp.deform_1d(deform_lengths, mesh,axis = 'y',norm = 'Min', constraints = [])
+    sp.deform_1d(deform_lengths, mesh,axis = 'y',norm = 'Min', constraints = yconst)
 
 
 # In[ ]:
@@ -394,7 +410,7 @@ if refineMesh:
 
 # # ICs and BCs
 
-# In[17]:
+# In[16]:
 
 # Initialise data.. Note that we are also setting boundary conditions here
 velocityField.data[:] = [0.,0.]
@@ -405,7 +421,7 @@ temperatureDotField.data[:] = 0.
 
 # ## Temp ICs
 
-# In[18]:
+# In[17]:
 
 
 # Setup temperature initial condition via numpy arrays
@@ -419,37 +435,7 @@ for index, coord in enumerate(mesh.data):
         tempNump[index] = 0.
 
 
-# In[19]:
-
-dummymesh = uw.mesh.FeMesh_Cartesian( elementType = ("Q1/dQ0"),
-                                 elementRes  = (128, 64), 
-                                 minCoord    = (-1.,0.), 
-                                 maxCoord=(1.,1.), periodic=False, partitioned=False)
-
-    
-dummytemperatureField = uw.mesh.MeshVariable(mesh=dummymesh, nodeDofCount=1 )
-
-dummytemperatureField.load("crust_resolution/8100/temperatureField.hdf5")
-
-
-# In[20]:
-
-checkpointLoad
-
-
 # In[21]:
-
-if not checkpointLoad:
-    temperatureDotField.data[:] = 0.
-    for index, coord in enumerate(mesh.data):
-        if coord[1] > 1.:
-            temperatureField.data[index] = 0.
-        #Don't know mesh partitions in ad vance, and possible diferent between 'real' and 'dummy' mesh
-        else:
-            temperatureField.data[index] = dummytemperatureField.evaluate([coord[0], coord[1]])
-
-
-# In[22]:
 
 #figTemp = glucifer.Figure()
 #figTemp.append( glucifer.objects.Surface(mesh, temperatureField))
@@ -460,7 +446,7 @@ if not checkpointLoad:
 
 # 
 
-# In[23]:
+# In[22]:
 
 # Get the actual sets 
 #
@@ -485,7 +471,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 
 
 
-# In[24]:
+# In[23]:
 
 # Now setup the dirichlet boundary condition
 # Note that through this object, we are flagging to the system 
@@ -514,7 +500,7 @@ tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
 
 # ##Reset bottom Dirichlet conds.
 
-# In[25]:
+# In[24]:
 
 # Set temp boundaries 
 # on the boundaries
@@ -524,7 +510,7 @@ for index in mesh.specialSets["MaxJ_VertexSet"]:
     temperatureField.data[index] = ndp.TS
 
 
-# In[26]:
+# In[25]:
 
 #checkdirs
 
@@ -536,7 +522,7 @@ for index in mesh.specialSets["MaxJ_VertexSet"]:
 
 # # Particles
 
-# In[27]:
+# In[26]:
 
 ###########
 #Material Swarm and variables
@@ -552,7 +538,7 @@ varlist = [materialVariable, rockIntVar, airIntVar, lithIntVar]
 varnames = ['materialVariable', 'rockIntVar', 'airIntVar', 'lithIntVar']
 
 
-# In[28]:
+# In[27]:
 
 ###########
 #Swarms for surface intragrals when using Sticky air
@@ -577,7 +563,7 @@ dumout = baseintswarm.add_particles_with_coordinates(np.array((xps,yps)).T)
 
 # #Initialise swarm variables, or Swarm checkpoint load
 
-# In[29]:
+# In[28]:
 
 mantleIndex = 0
 lithosphereIndex = 1
@@ -621,7 +607,7 @@ else:
 
 # #Material Graphs
 
-# In[30]:
+# In[29]:
 
 ##############
 #Important: This is a quick fix for a bug that arises in parallel runs
@@ -629,12 +615,12 @@ else:
 material_list = [0,1,2,3]
 
 
-# In[31]:
+# In[30]:
 
 print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.data[:])))
 
 
-# In[32]:
+# In[31]:
 
 
 
@@ -684,12 +670,12 @@ DG[0][2]['depthcondition'] = MANTLETOCRUST
 DG[1][2]['depthcondition'] = MANTLETOCRUST
 
 
-# In[33]:
+# In[32]:
 
 DG.nodes()
 
 
-# In[34]:
+# In[33]:
 
 remove_nodes = []
 for node in DG.nodes():
@@ -700,12 +686,12 @@ for rmnode in remove_nodes:
     DG.remove_node(rmnode)
 
 
-# In[35]:
+# In[34]:
 
 DG.nodes()
 
 
-# In[36]:
+# In[35]:
 
 #A Dictionary to map strings in the graph (e.g. 'depthcondition') to particle data arrays
 
@@ -720,7 +706,7 @@ conditionmap['avgtempcondition'] = {}
 conditionmap['avgtempcondition']['data'] = particletemps
 
 
-# In[37]:
+# In[36]:
 
 def update_swarm(graph, particleIndex):
     """
@@ -769,7 +755,7 @@ def update_swarm(graph, particleIndex):
         return innerchange
 
 
-# In[38]:
+# In[37]:
 
 #Cleanse the swarm of its sins
 #For some Material Graphs, the graph may have to be treaversed more than once
@@ -788,7 +774,7 @@ while number_updated != 0:
 
 # ##Set the values for the masking swarms
 
-# In[39]:
+# In[38]:
 
 #Setup up a masking Swarm variable for the integrations.
 #These should be rebuilt at same frequency as the metric calcualtions
@@ -809,7 +795,7 @@ lithIntVar.data[islith] = 1.
 # #Material properties
 # 
 
-# In[40]:
+# In[60]:
 
 #Make variables required for plasticity
 
@@ -853,7 +839,7 @@ crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 
 # Here we set a viscosity value of '1.' for both materials
 viscosityMapFn = fn.branching.map( fn_key = materialVariable,
-                         mapping = {airIndex:AIRVISCOSITY, 
+                         mapping = {airIndex:ndp.StAeta0, 
                                     lithosphereIndex:viscosityFn2, 
                                     crustIndex:crustviscosityFn2,
                                     mantleIndex:viscosityFn2} )
@@ -1235,7 +1221,7 @@ else:
 startMain = time.clock()
 # Perform steps#
 while realtime < 0.05:
-#while step < 8:
+#while step < 25:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
@@ -1376,15 +1362,44 @@ f_o.close()
 
 
 
-# In[ ]:
+# In[64]:
+
+gSwarm.particleCoordinates.data
 
 
-#figMat = glucifer.Figure()
-#figMat.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red'))
+# In[42]:
+
+#Cleanse the swarm of its sins
+#For some Material Graphs, the graph may have to be treaversed more than once
+
+check = -1
+number_updated = 1
+
+while number_updated != 0:
+    number_updated = 0
+    for particleID in range(gSwarm.particleCoordinates.data.shape[0]):
+                check = update_swarm(DG, particleID)
+                if check > -1:
+                    number_updated += 1
+                    materialVariable.data[particleID] = check
+
+
+# In[44]:
+
+for index, coord in enumerate(gSwarm.particleCoordinates.data):
+        if coord[1] < 0.2:
+            materialVariable.data[index] = 2
+
+
+# In[45]:
+
+
+figMat = glucifer.Figure()
+figMat.append( glucifer.objects.Points(gSwarm,materialVariable, colours='brown white blue red'))
 #figMat.append( glucifer.objects.Points(surfintswarm,materialVariable, pointSize= 5.))
-#figMat.append( glucifer.objects.Mesh(mesh))
+figMat.append( glucifer.objects.Mesh(mesh))
 #figMat.save_database('test.gldb')
-#figMat.show()
+figMat.show()
 
  
 
@@ -1410,20 +1425,20 @@ f_o.close()
 # In[ ]:
 
 machine_time = (time.clock()-startMain)
-print("total time is: " + str(machine_time))
-
-
-# In[61]:
-
-velocityField.evaluate(IWalls)[:,0].max()
-
-
-# In[62]:
-
-velocityField.evaluate(TWalls)[:,0].max()
+print("total machine time is: " + str(machine_time))
 
 
 # In[ ]:
 
+print("dimensionless time is: " + str(realtime))
 
+
+# In[61]:
+
+#velocityField.evaluate(IWalls)[:,0].max()
+
+
+# In[62]:
+
+#velocityField.evaluate(TWalls)[:,0].max()
 
