@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.  
 ############
 Model = "B"
-ModNum = 3
+ModNum = 0
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-RA = 1e7
+#RA = 1e7
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 

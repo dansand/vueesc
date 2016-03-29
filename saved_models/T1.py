@@ -67,8 +67,8 @@ if (len(sys.argv) > 1):
 ############
 #Model name.  
 ############
-Model = "B"
-ModNum = 3
+Model = "T"
+ModNum = 1
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-RA = 1e7
+#RA = 1e7
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 
@@ -233,7 +233,7 @@ ndp["StA"] = ndp.RA*COMP_RA_FACT
 #Model setup parameters
 ###########
 
-stickyAir = False
+stickyAir = True
 
 MINX = -1.
 MINY = 0.
@@ -253,7 +253,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 96
+RES = 128
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -280,11 +280,11 @@ else:
     MAXY = 1.
 
 
-periodic = [False, False]
+periodic = [True, False]
 elementType = "Q1/dQ0"
 #elementType ="Q2/DPC1"
 
-refineMesh = False
+refineMesh = True
 
 
 #System/Solver stuff
@@ -488,7 +488,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions. 
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField, 
-                                              indexSetsPerDof=(IWalls, JWalls) )
+                                              indexSetsPerDof=(TWalls, JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField, 
@@ -851,7 +851,7 @@ crustviscosityFn2 = 2./(1./viscosityl2 + 1./crustviscosityp)
 viscosityMapFn = fn.branching.map( fn_key = materialVariable,
                          mapping = {airIndex:ndp.StAeta0, 
                                     lithosphereIndex:viscosityFn2, 
-                                    crustIndex:crustviscosityFn2,
+                                    crustIndex:viscosityFn2,
                                     mantleIndex:viscosityFn2} )
 
 densityMapFn = fn.branching.map( fn_key = materialVariable,

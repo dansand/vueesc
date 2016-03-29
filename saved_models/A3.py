@@ -67,7 +67,7 @@ if (len(sys.argv) > 1):
 ############
 #Model name.  
 ############
-Model = "B"
+Model = "A"
 ModNum = 3
 
 if len(sys.argv) == 1:
@@ -233,7 +233,7 @@ ndp["StA"] = ndp.RA*COMP_RA_FACT
 #Model setup parameters
 ###########
 
-stickyAir = False
+stickyAir = True
 
 MINX = -1.
 MINY = 0.
@@ -253,7 +253,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 96
+RES = 128
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -280,11 +280,11 @@ else:
     MAXY = 1.
 
 
-periodic = [False, False]
+periodic = [True, False]
 elementType = "Q1/dQ0"
 #elementType ="Q2/DPC1"
 
-refineMesh = False
+refineMesh = True
 
 
 #System/Solver stuff
@@ -488,7 +488,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions. 
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField, 
-                                              indexSetsPerDof=(IWalls, JWalls) )
+                                              indexSetsPerDof=(TWalls, JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField, 
