@@ -155,7 +155,7 @@ newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears becaus
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 
 
 #get the relative difference between the model Rayleigh number and the reference Rayleigh number
-delRa = (RA /(1e2*newvisc))
+delRa = (RA /(1e2*newvisc0))
 
 #if the Rayleigh number is different to the reference, we need to scale all yield-stress values. 
 #The scaling here is based on Tau_c ~ u_0 ~ Ra^(2/3)...where Tau_c ~ u_0 are the convective stress, 
