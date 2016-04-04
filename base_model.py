@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.  
 ############
 Model = "T"
-ModNum = 3
+ModNum = 0
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -252,7 +252,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 128
+RES = 64
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -299,7 +299,7 @@ ppc = 25
 ###########
 
 swarm_update = 10
-swarm_repop = 200
+swarm_repop = 100
 files_output = 1e6
 gldbs_output = 500
 images_output = 1e6
@@ -633,7 +633,7 @@ print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.
 
 
 
-#All depth conditions are given as (km/D) where D is the length scale, 
+#All depth conditions are given as (km/D) where D is the length scale,
 #note that 'model depths' are used, e.g. 1-z, where z is the vertical Underworld coordinate
 #All temp conditions are in dimensionless temp. [0. - 1.]
 
@@ -641,7 +641,7 @@ print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.
 DG = nx.DiGraph(field="Depth")
 
 #######Nodes
-#Note that the order of materials, deepest to shallowest is important 
+#Note that the order of materials, deepest to shallowest is important
 DG.add_node(0, mat='mantle')
 DG.add_node(1, mat='lithosphere')
 DG.add_node(2, mat='crust')
@@ -649,7 +649,7 @@ DG.add_node(3, mat='air')
 
 
 labels=dict((n,d['mat']) for n,d in DG.nodes(data=True))
-pos=nx.spring_layout(DG) 
+pos=nx.spring_layout(DG)
 
 
 #######Edges
@@ -661,8 +661,7 @@ DG[2][3]['depthcondition'] = -1*TOPOHEIGHT
 
 
 #Anything to mantle
-DG.add_edges_from([(2,0), (3,0), (1,0)])
-DG[3][0]['depthcondition'] = TOPOHEIGHT
+DG.add_edges_from([(2,0), (1,0)])
 DG[2][0]['depthcondition'] = CRUSTTOMANTLE
 DG[1][0]['depthcondition'] = LITHTOMANTLE #This means we're going to kill lithosphere at the 660.
 
@@ -674,9 +673,10 @@ DG[0][1]['avgtempcondition'] = 0.75*AVGTEMP #definition of thermal lithosphere
 
 
 #Anything to crust
-DG.add_edges_from([(0,2), (1,2)])
+DG.add_edges_from([(0,2), (1,2), (3,2)])
 DG[0][2]['depthcondition'] = MANTLETOCRUST
 DG[1][2]['depthcondition'] = MANTLETOCRUST
+DG[3][2]['depthcondition'] = TOPOHEIGHT
 
 
 # In[29]:
@@ -966,12 +966,12 @@ solver.solve(nonLinearIterate=True)
 # 
 # Setup the system in underworld by flagging the temperature and velocity field variables.
 
-# In[ ]:
+# In[50]:
+
+#uw.systems.AdvectionDiffusion?
 
 
-
-
-# In[45]:
+# In[51]:
 
 #Create advdiff system
 
@@ -980,7 +980,8 @@ solver.solve(nonLinearIterate=True)
 advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField, 
                                          phiDotField    = temperatureDotField, 
                                          velocityField  = velocityField, 
-                                         fn_diffusivity = 1.0, 
+                                         fn_diffusivity = 1.0,
+                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
 
 
@@ -1006,7 +1007,7 @@ advector = uw.systems.SwarmAdvector( swarm         = gSwarm,
 # 
 # $$ \delta = \frac{\lvert \langle W \rangle - \frac{\langle \Phi \rangle}{Ra} \rvert}{max \left(  \langle W \rangle,  \frac{\langle \Phi \rangle}{Ra}\right)} \times 100% $$
 
-# In[ ]:
+# In[52]:
 
 #Setup some Integrals. We want these outside the main loop...
 tempVariable = gSwarm.add_variable( dataType="double", count=1 )
@@ -1036,7 +1037,7 @@ fn_minmax_stress = fn.view.min_max(fn.tensor.second_invariant(fn_stress)*airIntV
 ignore_stress = fn_minmax_stress.evaluate(gSwarm)
 
 
-# In[ ]:
+# In[53]:
 
 #These should differ if the the map function assigns different properties to bulk mantle
 
@@ -1053,7 +1054,7 @@ print(uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh).evaluate()[
 
 # \begin{equation}  \langle T \rangle  = \int^1_0 \int^1_0 T \, dxdy \end{equation}
 
-# In[ ]:
+# In[54]:
 
 def avg_temp():
     return tempint.evaluate()[0]/areaint.evaluate()[0]
@@ -1113,7 +1114,7 @@ def avg_lith_stress():
     return stresslith.evaluate()[0]/areaint.evaluate()[0]
 
 
-# In[ ]:
+# In[55]:
 
 #Fields for saving data / fields
 
@@ -1138,7 +1139,7 @@ viscVariable = gSwarm.add_variable( dataType="float", count=1 )
 viscVariable.data[:] = viscosityMapFn.evaluate(gSwarm)
 
 
-# In[ ]:
+# In[56]:
 
 #Images
 figEta = glucifer.Figure()
@@ -1173,13 +1174,13 @@ figDb.append( glucifer.objects.Surface(mesh, temperatureField))
                            
 
 
-# In[ ]:
+# In[57]:
 
 
 pics = uw.swarm.PICIntegrationSwarm(gSwarm)
 
 
-# In[ ]:
+# In[58]:
 
 def checkpoint1(step, checkpointPath,filename, filewrites):
     path = checkpointPath + str(step) 
@@ -1208,7 +1209,7 @@ def checkpoint2(step, checkpointPath, swarm, filename, varlist = [materialVariab
     
 
 
-# In[ ]:
+# In[59]:
 
 ###########
 #Open file for writing metrics
@@ -1237,13 +1238,13 @@ else:
 # The main time stepping loop begins here. Before this the time and timestep are initialised to zero and the output statistics arrays are set up. Also the frequency of outputting basic statistics to the screen is set in steps_output.
 # 
 
-# In[222]:
+# In[ ]:
 
 # initialise timer for computation
 startMain = time.clock()
 # Perform steps#
-while realtime < 0.2:
-#while step < 25:
+#while realtime < 0.2:
+while step < 5:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
@@ -1379,9 +1380,14 @@ f_o.close()
 #print 'step =',step, '; dt =', dt, '; CPU time =', time.clock()-startMain
 
 
-# In[66]:
+# In[72]:
 
 avg_temp(), areaint.evaluate()[0]
+
+
+# In[ ]:
+
+
 
 
 # In[ ]:
@@ -1393,17 +1399,17 @@ avg_temp(), areaint.evaluate()[0]
 
 
 
-# In[122]:
+# In[62]:
 
 figMat = glucifer.Figure()
 figMat.append( glucifer.objects.Surface(mesh, temperatureField))
 #figMat.append( glucifer.objects.Points(surfintswarm,materialVariable, pointSize= 5.))
-#figMat.append( glucifer.objects.Mesh(mesh))
+figMat.append( glucifer.objects.Mesh(mesh))
 #figMat.save_database('test.gldb')
 figMat.show()
 
 
-# In[123]:
+# In[63]:
 
 tempcheckVariable = gSwarm.add_variable( dataType="double", count=1 )
 tempcheckVariable.data[:] = temperatureField.evaluate(gSwarm)[:] - tempVariable.data[:]
@@ -1411,7 +1417,7 @@ tempcheckVariable.data[:] = temperatureField.evaluate(gSwarm)[:] - tempVariable.
 
 
 
-# In[124]:
+# In[64]:
 
 
 figMat = glucifer.Figure()
@@ -1424,17 +1430,17 @@ figMat.show()
  
 
 
-# In[128]:
+# In[71]:
 
 figMat = glucifer.Figure()
 #figMat.append( glucifer.objects.Points(gSwarm,rockIntVar))
-figMat.append( glucifer.objects.Points(gSwarm,materialVariable, pointSize= 5.))
+figMat.append( glucifer.objects.Points(gSwarm,rockIntVar, pointSize= 5.))
 figMat.append( glucifer.objects.Mesh(mesh))
 figMat.save_database('test.gldb')
 figMat.show()
 
 
-# In[126]:
+# In[66]:
 
 figDb.show()
 figDb.save_database('test.gldb')
@@ -1464,9 +1470,9 @@ print("total machine time is: " + str(machine_time))
 print("dimensionless time is: " + str(realtime))
 
 
-# In[61]:
+# In[70]:
 
-#velocityField.evaluate(IWalls)[:,0].max()
+velocityField.evaluate(IWalls)[:,0].max()
 
 
 # In[62]:
@@ -1476,7 +1482,7 @@ print("dimensionless time is: " + str(realtime))
 
 # ## stress metrics
 
-# In[119]:
+# In[67]:
 
 fn_stress = 2.*viscosityMapFn*uw.function.tensor.symmetric(velocityField.fn_gradient)
 stresslith = uw.utils.Integral((fn_stress)*lithIntVar, mesh)
@@ -1484,10 +1490,10 @@ def avg_lith_stress():
     return stresslith.evaluate()[0]/areaint.evaluate()[0]
 
 
-# In[124]:
+# In[69]:
 
 fn_minmax_stress = fn.view.min_max(fn.tensor.second_invariant(fn_stress)*airIntVar)
-ignore_stress = fn_minmax_inv.evaluate(gSwarm)
+ignore_stress = fn_minmax_stress.evaluate(gSwarm)
 fn_minmax_stress.max_global()
 
 

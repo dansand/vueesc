@@ -67,8 +67,8 @@ if (len(sys.argv) > 1):
 ############
 #Model name.
 ############
-Model = "B"
-ModNum = 0
+Model = "T"
+ModNum = 4
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -233,7 +233,7 @@ ndp["StA"] = ndp.RA*COMP_RA_FACT
 #Model setup parameters
 ###########
 
-stickyAir = False
+stickyAir = True
 
 MINX = -1.
 MINY = 0.
@@ -253,7 +253,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 96
+RES = 128
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -280,11 +280,11 @@ else:
     MAXY = 1.
 
 
-periodic = [False, False]
+periodic = [True, False]
 elementType = "Q1/dQ0"
 #elementType ="Q2/DPC1"
 
-refineMesh = False
+refineMesh = True
 
 
 #System/Solver stuff
@@ -302,9 +302,9 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 10
 files_output = 1e6
-gldbs_output = 500
+gldbs_output = 25
 images_output = 1e6
-checkpoint_every = 1000
+checkpoint_every = 25
 metric_output = 20
 sticky_air_temp = 1e6
 
@@ -488,7 +488,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions.
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField,
-                                              indexSetsPerDof=(IWalls, JWalls) )
+                                              indexSetsPerDof=(TWalls, JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
@@ -633,6 +633,7 @@ print( "unique values after swarm has loaded:" + str(np.unique(materialVariable.
 # In[28]:
 
 
+
 #All depth conditions are given as (km/D) where D is the length scale,
 #note that 'model depths' are used, e.g. 1-z, where z is the vertical Underworld coordinate
 #All temp conditions are in dimensionless temp. [0. - 1.]
@@ -677,6 +678,9 @@ DG.add_edges_from([(0,2), (1,2), (3,2)])
 DG[0][2]['depthcondition'] = MANTLETOCRUST
 DG[1][2]['depthcondition'] = MANTLETOCRUST
 DG[3][2]['depthcondition'] = TOPOHEIGHT
+
+
+# In[29]:
 
 DG.nodes()
 
@@ -973,11 +977,15 @@ solver.solve(nonLinearIterate=True)
 #Create advdiff system
 
 
+#Create advdiff system
+
+
 
 advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          phiDotField    = temperatureDotField,
                                          velocityField  = velocityField,
                                          fn_diffusivity = 1.0,
+                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
 
 
@@ -1183,8 +1191,9 @@ def checkpoint1(step, checkpointPath,filename, filewrites):
     os.mkdir(path)
     ##Write and save the file, if not already a writing step
     if not step % filewrites == 0:
-        filename.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
-                                              Rms,Rmsurfglob,Max_vx_surf,Gravwork, etamax, etamin, Viscdisair, Viscdislith))
+        f_o.write((15*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
+                                          Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin,
+                                          Viscdisair, Viscdislith,Avg_stress, Max_stress))
     filename.close()
     shutil.copyfile(os.path.join(outputPath, outputFile), os.path.join(path, outputFile))
 
