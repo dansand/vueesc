@@ -206,15 +206,15 @@ MANTLETOCRUST = (18.*1e3)/D #Crust depth
 CRUSTTOMANTLE = (300.*1e3)/D
 LITHTOMANTLE = (660.*1e3)/D
 MANTLETOLITH = (200.*1e3)/D
-TOPOHEIGHT = (10.*1e3)/D #rock-air topography limits
+TOPOHEIGHT = (20.*1e3)/D #rock-air topography limits
 AVGTEMP = 0.53 #Used to define lithosphere
 
 
 
 #Compositional Rayliegh number of rock-air
 ETAREF = rho*g*a*dT*((D*1e3)**3)/(ndp.RA*kappa) #equivalent dimesnional reference viscosity
-#RC = (3300*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
-RC = (1650*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
+RC = (3300*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
+#RC = (1650*g*(D*1000)**3)/(ETAREF *kappa) #Composisitional Rayleigh number for rock-air buoyancy force
 
 COMP_RA_FACT = RC/ndp.RA
 
@@ -306,7 +306,7 @@ gldbs_output = 500
 images_output = 1e6
 checkpoint_every = 1000
 metric_output = 20
-sticky_air_temp = 1e6
+sticky_air_temp = 2
 
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early
 
