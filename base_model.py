@@ -67,8 +67,8 @@ if (len(sys.argv) > 1):
 ############
 #Model name.  
 ############
-Model = "T"
-ModNum = 0
+Model = "B"
+ModNum = 3
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-#RA = 1e7
+RA = 1e7
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 
@@ -232,7 +232,7 @@ ndp["StA"] = ndp.RA*COMP_RA_FACT
 #Model setup parameters
 ###########
 
-stickyAir = True
+stickyAir = False
 
 MINX = -1.
 MINY = 0.
@@ -252,7 +252,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 64
+RES = 96
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -301,7 +301,7 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 100
 files_output = 1e6
-gldbs_output = 500
+gldbs_output = 250
 images_output = 1e6
 checkpoint_every = 1000
 metric_output = 20
@@ -542,6 +542,7 @@ materialVariable = gSwarm.add_variable( dataType="char", count=1 )
 rockIntVar = gSwarm.add_variable( dataType="double", count=1 )
 airIntVar = gSwarm.add_variable( dataType="double", count=1 )
 lithIntVar = gSwarm.add_variable( dataType="double", count=1 )
+dummyIntVar = gSwarm.add_variable( dataType="double", count=1 ) #This one is used so we can safely ignore values in the air region
 
 varlist = [materialVariable, rockIntVar, airIntVar, lithIntVar]
 varnames = ['materialVariable', 'rockIntVar', 'airIntVar', 'lithIntVar']
@@ -550,7 +551,7 @@ varnames = ['materialVariable', 'rockIntVar', 'airIntVar', 'lithIntVar']
 # In[24]:
 
 ###########
-#Swarms for surface intragrals when using Sticky air
+#Swarms for surface integrals when using Sticky air
 ###########
 
 snum = 1000.
@@ -800,6 +801,13 @@ lithIntVar.data[:] = 0.
 islith = np.where((materialVariable.data == lithosphereIndex) | (materialVariable.data == crustIndex))
 lithIntVar.data[islith] = 1.
 
+dummyIntVar.data[:] = 1.
+dummyIntVar.data[notrock] = 1e100  #We'll multiply certain swarm variables by this guy,which
+#will allow us grab minimum values and assume they are from the rock part
+
+
+
+
 
 # #Material properties
 # 
@@ -966,12 +974,12 @@ solver.solve(nonLinearIterate=True)
 # 
 # Setup the system in underworld by flagging the temperature and velocity field variables.
 
-# In[50]:
+# In[45]:
 
 #uw.systems.AdvectionDiffusion?
 
 
-# In[51]:
+# In[46]:
 
 #Create advdiff system
 
@@ -1007,7 +1015,7 @@ advector = uw.systems.SwarmAdvector( swarm         = gSwarm,
 # 
 # $$ \delta = \frac{\lvert \langle W \rangle - \frac{\langle \Phi \rangle}{Ra} \rvert}{max \left(  \langle W \rangle,  \frac{\langle \Phi \rangle}{Ra}\right)} \times 100% $$
 
-# In[52]:
+# In[47]:
 
 #Setup some Integrals. We want these outside the main loop...
 tempVariable = gSwarm.add_variable( dataType="double", count=1 )
@@ -1016,6 +1024,7 @@ tempint = uw.utils.Integral((tempVariable*rockIntVar), mesh)
 
 
 areaint = uw.utils.Integral((1.*rockIntVar),mesh)
+lithareaint = uw.utils.Integral((1.*lithIntVar),mesh)
 
 v2int = uw.utils.Integral(fn.math.dot(velocityField,velocityField)*rockIntVar, mesh)
 
@@ -1028,16 +1037,15 @@ vdint = uw.utils.Integral((4.*viscosityMapFn*sinner)*rockIntVar, mesh)
 vdintair = uw.utils.Integral((4.*viscosityMapFn*sinner)*airIntVar, mesh)
 vdintlith = uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh)
 
+
 fn_stress = 2.*viscosityMapFn*uw.function.tensor.symmetric(velocityField.fn_gradient)
-stresslith = uw.utils.Integral((fn_stress)*lithIntVar, mesh)
+rockstress = fn.tensor.second_invariant(fn_stress)*rockIntVar
+lithstress = fn.tensor.second_invariant(fn_stress)*lithIntVar
+
+stresslithint = uw.utils.Integral((fn_stress)*lithIntVar, mesh)
 
 
-#function global extrema
-fn_minmax_stress = fn.view.min_max(fn.tensor.second_invariant(fn_stress)*airIntVar)
-ignore_stress = fn_minmax_stress.evaluate(gSwarm)
-
-
-# In[53]:
+# In[ ]:
 
 #These should differ if the the map function assigns different properties to bulk mantle
 
@@ -1054,7 +1062,7 @@ print(uw.utils.Integral((4.*viscosityMapFn*sinner)*lithIntVar, mesh).evaluate()[
 
 # \begin{equation}  \langle T \rangle  = \int^1_0 \int^1_0 T \, dxdy \end{equation}
 
-# In[54]:
+# In[53]:
 
 def avg_temp():
     return tempint.evaluate()[0]/areaint.evaluate()[0]
@@ -1105,13 +1113,34 @@ def viscdis(vdissfn):
     return vdissfn.evaluate()[0]
 
 def visc_extr(viscfn):
-    vuviscfn = fn.view.min_max(viscfn)
-    vuviscfn.evaluate(gSwarm)
-    return vuviscfn.max_global(), vuviscfn.min_global()
+    vuviscfnMax = fn.view.min_max(viscfn)
+    vuviscfnMax.evaluate(gSwarm)
+    vuviscfnMin = fn.view.min_max(viscfn*dummyIntVar)
+    vuviscfnMin.evaluate(gSwarm)
+    return vuviscfnMax.max_global(), vuviscfnMin.min_global()
+
+
+def stress_max(scalarStressfn):
+    fn_minmax_stress = fn.view.min_max(rockstress)
+    ignore_stress = fn_minmax_stress.evaluate(gSwarm)
+    return fn_minmax_stress.max_global()
 
 
 def avg_lith_stress():
-    return stresslith.evaluate()[0]/areaint.evaluate()[0]
+    return stresslithint.evaluate()[0]/lithareaint.evaluate()[0]
+
+
+# In[ ]:
+
+
+
+
+# In[61]:
+
+#Check dem 
+#stress_max(rockstress)
+#visc_extr(viscosityMapFn), ndp.StAeta0
+#avg_lith_stress()
 
 
 # In[55]:
@@ -1187,8 +1216,9 @@ def checkpoint1(step, checkpointPath,filename, filewrites):
     os.mkdir(path)
     ##Write and save the file, if not already a writing step
     if not step % filewrites == 0:
-        filename.write((13*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp, 
-                                              Rms,Rmsurfglob,Max_vx_surf,Gravwork, etamax, etamin, Viscdisair, Viscdislith))
+        f_o.write((15*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp, 
+                                              Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin, 
+                                              Viscdisair, Viscdislith,Avg_stress, Max_stress))
     filename.close()
     shutil.copyfile(os.path.join(outputPath, outputFile), os.path.join(path, outputFile))
 
@@ -1238,13 +1268,13 @@ else:
 # The main time stepping loop begins here. Before this the time and timestep are initialised to zero and the output statistics arrays are set up. Also the frequency of outputting basic statistics to the screen is set in steps_output.
 # 
 
-# In[ ]:
+# In[60]:
 
 # initialise timer for computation
 startMain = time.clock()
 # Perform steps#
-#while realtime < 0.2:
-while step < 5:
+while realtime < 0.2:
+#while step < 25:
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
@@ -1335,7 +1365,8 @@ while step < 5:
         Max_vx_surfglob = np.array(0.0,dtype=dTp)
         ignore_stress = fn_minmax_stress.evaluate(gSwarm)
         Avg_stress = avg_lith_stress()
-        Max_stress = fn_minmax_stress.max_global()
+        Max_stress_rock = stress_max(rockstress)
+        Max_stress_lith = stress_max(lithstress)
         #Do global operation ... sum, or max
         comm.Allreduce(Nu0loc, Nu0glob, op=MPI.SUM)
         comm.Allreduce(Nu1loc, Nu1glob, op=MPI.SUM)
@@ -1345,7 +1376,7 @@ while step < 5:
         if uw.rank()==0:
             f_o.write((15*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp, 
                                               Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin, 
-                                              Viscdisair, Viscdislith,Avg_stress, Max_stress))
+                                              Viscdisair, Viscdislith,Avg_stress, Max_stress_rock, Max_stress_lith))
         #test = max_vx_surf(velocityField, surfintswarm)    
         #if uw.rank()==0:
          #   print(Rmsurfglob,MRms_surf, Max_vx_surfglob, MMax_vx_surf, etamax, Metamax)
@@ -1380,7 +1411,7 @@ f_o.close()
 #print 'step =',step, '; dt =', dt, '; CPU time =', time.clock()-startMain
 
 
-# In[72]:
+# In[61]:
 
 avg_temp(), areaint.evaluate()[0]
 
@@ -1390,7 +1421,7 @@ avg_temp(), areaint.evaluate()[0]
 
 
 
-# In[ ]:
+# In[62]:
 
 #figEta = glucifer.Figure(figsize=(1024,384))
 #figEta.append( glucifer.objects.Points(gSwarm,viscVariable, logScale=True))
@@ -1399,7 +1430,7 @@ avg_temp(), areaint.evaluate()[0]
 
 
 
-# In[62]:
+# In[63]:
 
 figMat = glucifer.Figure()
 figMat.append( glucifer.objects.Surface(mesh, temperatureField))
@@ -1440,10 +1471,10 @@ figMat.save_database('test.gldb')
 figMat.show()
 
 
-# In[66]:
+# In[64]:
 
 figDb.show()
-figDb.save_database('test.gldb')
+#figDb.save_database('test.gldb')
 
 
 # In[ ]:
@@ -1485,9 +1516,9 @@ velocityField.evaluate(IWalls)[:,0].max()
 # In[67]:
 
 fn_stress = 2.*viscosityMapFn*uw.function.tensor.symmetric(velocityField.fn_gradient)
-stresslith = uw.utils.Integral((fn_stress)*lithIntVar, mesh)
+stresslithint = uw.utils.Integral((fn_stress)*lithIntVar, mesh)
 def avg_lith_stress():
-    return stresslith.evaluate()[0]/areaint.evaluate()[0]
+    return stresslithint.evaluate()[0]/areaint.evaluate()[0]
 
 
 # In[69]:
@@ -1500,6 +1531,11 @@ fn_minmax_stress.max_global()
 # In[125]:
 
 
+
+
+# In[6]:
+
+(2890.+ 145.)/(128)/2.
 
 
 # In[ ]:
