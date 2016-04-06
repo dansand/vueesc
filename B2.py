@@ -67,7 +67,7 @@ if (len(sys.argv) > 1):
 ############
 #Model name.
 ############
-Model = "A"
+Model = "B"
 ModNum = 2
 
 if len(sys.argv) == 1:
@@ -232,7 +232,7 @@ ndp["StA"] = ndp.RA*COMP_RA_FACT
 #Model setup parameters
 ###########
 
-stickyAir = True
+stickyAir = False
 
 MINX = -1.
 MINY = 0.
@@ -252,7 +252,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 128
+RES = 64
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -301,7 +301,7 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 100
 files_output = 1e6
-gldbs_output = 100
+gldbs_output = 250
 images_output = 1e6
 checkpoint_every = 1000
 metric_output = 20

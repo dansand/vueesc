@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.
 ############
 Model = "A"
-ModNum = 2
+ModNum = 0
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-RA = 1e6
+#RA = 1e7
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system
@@ -252,7 +252,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 128
+RES = 64
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -301,10 +301,10 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 100
 files_output = 1e6
-gldbs_output = 100
+gldbs_output = 5
 images_output = 1e6
 checkpoint_every = 1000
-metric_output = 20
+metric_output = 5
 sticky_air_temp = 1e6
 
 comm.Barrier() #Barrier here so not procs run the check in the next cell too early
@@ -989,6 +989,7 @@ advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          phiDotField    = temperatureDotField,
                                          velocityField  = velocityField,
                                          fn_diffusivity = 1.0,
+                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
 
 
