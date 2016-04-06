@@ -989,7 +989,6 @@ advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          phiDotField    = temperatureDotField,
                                          velocityField  = velocityField,
                                          fn_diffusivity = 1.0,
-                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
 
 
@@ -1363,7 +1362,7 @@ while realtime < 0.2:
         Rmsurfglob = np.array(0, dtype=dTp)
         dTp = Max_vx_surfloc.dtype
         Max_vx_surfglob = np.array(0.0,dtype=dTp)
-        ignore_stress = fn_minmax_stress.evaluate(gSwarm)
+        #ignore_stress = fn_minmax_stress.evaluate(gSwarm)
         Avg_stress = avg_lith_stress()
         Max_stress_rock = stress_max(rockstress)
         Max_stress_lith = stress_max(lithstress)
@@ -1374,7 +1373,7 @@ while realtime < 0.2:
         comm.Allreduce([Max_vx_surfloc, MPI.DOUBLE],[Max_vx_surfglob, MPI.DOUBLE],op=MPI.MAX)
         # output to summary text file
         if uw.rank()==0:
-            f_o.write((15*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
+            f_o.write((16*'%-16s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
                                               Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin,
                                               Viscdisair, Viscdislith,Avg_stress, Max_stress_rock, Max_stress_lith))
         #test = max_vx_surf(velocityField, surfintswarm)
