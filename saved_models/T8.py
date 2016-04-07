@@ -252,7 +252,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 128
+RES = 48
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
@@ -989,7 +989,9 @@ advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          phiDotField    = temperatureDotField,
                                          velocityField  = velocityField,
                                          fn_diffusivity = 1.0,
+                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
+
 
 
 
@@ -1274,6 +1276,7 @@ startMain = time.clock()
 # Perform steps#
 while realtime < 0.2:
 #while step < 25:
+    print(visc_extr(viscosityMapFn))
     #Enter non-linear loop
     print step
     solver.solve(nonLinearIterate=True)
