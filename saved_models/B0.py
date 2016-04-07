@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-#RA = 1e7
+#RA = 1e5
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 
@@ -492,7 +492,7 @@ BWalls = mesh.specialSets["MinJ_VertexSet"]
 # that these nodes are to be considered as boundary conditions. 
 # Also note that we provide a tuple of sets.. One for the Vx, one for Vy.
 freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField, 
-                                              indexSetsPerDof=(TWalls, JWalls) )
+                                              indexSetsPerDof=(IWalls, JWalls) )
 
 # also set dirichlet for temp field
 tempBC = uw.conditions.DirichletCondition(     variable=temperatureField, 
