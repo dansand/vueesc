@@ -68,7 +68,7 @@ if (len(sys.argv) > 1):
 #Model name.  
 ############
 Model = "B"
-ModNum = 0
+ModNum = 3
 
 if len(sys.argv) == 1:
     ModIt = "Base"
@@ -149,7 +149,7 @@ for dirpath, dirnames, files in os.walk(checkpointPath):
 RA0 = RA =  1e2*math.exp(math.log(1e5)*0.53)
 
 ##Set the Rayleigh number, if different to reference
-#RA = 1e5
+RA = 1e7
 
 newvisc0 = newvisc1 = math.exp(math.log(1e5)*0.53) #A factor that appears because I rescale the reference viscosity, compared to the one used in Tosi et al.
 #Where 1e5 = etaT, and 0.53 is the steady state average temp of the system 
@@ -306,7 +306,7 @@ ppc = 25
 swarm_update = 10
 swarm_repop = 100
 files_output = 1e6
-gldbs_output = 200
+gldbs_output = 20
 images_output = 1e6
 checkpoint_every = 500
 metric_output = 20

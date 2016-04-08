@@ -992,7 +992,6 @@ advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          phiDotField    = temperatureDotField,
                                          velocityField  = velocityField,
                                          fn_diffusivity = 1.0,
-                                         fn_sourceTerm = 0.,
                                          conditions     = [tempBC,] )
 
 
