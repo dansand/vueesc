@@ -1218,9 +1218,9 @@ def checkpoint1(step, checkpointPath,filename, filewrites):
     os.mkdir(path)
     ##Write and save the file, if not already a writing step
     if not step % filewrites == 0:
-        f_o.write((15*'%-15s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
-                                              Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin,
-                                              Viscdisair, Viscdislith,Avg_stress, Max_stress))
+        f_o.write((16*'%-16s ' + '\n') % (realtime, Viscdis, float(Nu0glob), float(Nu1glob), Avg_temp,
+                                          Rms,Rmsurfglob,Max_vx_surfglob,Gravwork, etamax, etamin,
+                                          Viscdisair, Viscdislith,Avg_stress, Max_stress_rock, Max_stress_lith))
     filename.close()
     shutil.copyfile(os.path.join(outputPath, outputFile), os.path.join(path, outputFile))
 
