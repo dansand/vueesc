@@ -258,7 +258,7 @@ dim = 2          # number of spatial dimensions
 
 #MESH STUFF
 
-RES = 128
+RES = 96
 
 #######################To be replaced soon
 #Physical parameters that can be defined with STDIN,
