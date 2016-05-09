@@ -497,12 +497,12 @@ freeslipBC = uw.conditions.DirichletCondition(     variable=velocityField,
 
 # also set dirichlet for temp field
 dirichTempBC = uw.conditions.DirichletCondition(     variable=temperatureField,
-                                              indexSetsPerDof=(TWalls,) )
+                                              indexSetsPerDof=(JWalls,) )
 dT_dy = [0.,0.]
 
 # also set dirichlet for temp field
-neumannTempBC = uw.conditions.NeumannCondition( dT_dy, variable=temperatureField,
-                                         indexSetsPerDof=BWalls)
+#neumannTempBC = uw.conditions.NeumannCondition( dT_dy, variable=temperatureField,
+#                                         indexSetsPerDof=BWalls)
 
 
 # ##Add Random 125 K temp perturbation
@@ -999,7 +999,7 @@ advDiff = uw.systems.AdvectionDiffusion( phiField       = temperatureField,
                                          velocityField  = velocityField,
                                          fn_sourceTerm    = ndp.heating,
                                          fn_diffusivity = 1.0,
-                                         conditions     = [neumannTempBC, dirichTempBC] )
+                                         conditions     = [dirichTempBC,] )
 
 
 
